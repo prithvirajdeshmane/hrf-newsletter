@@ -29,6 +29,7 @@ python scripts/generate_newsletter.py <geo[-lang]>
 ```
 Examples:
 - `python scripts/generate_newsletter.py us` (defaults to English for US)
+- `python scripts/generate_newsletter.py ca` (ca OR ca-en = English)
 - `python scripts/generate_newsletter.py ca-fr` (Canadian French)
 - `python scripts/generate_newsletter.py cn` (defaults to Chinese for China)
 - `python scripts/generate_newsletter.py ne` (defaults to French for Niger)
@@ -90,4 +91,9 @@ Examples:
 (Coming soon)
 
 ---
+
+## Country & Language Reference
+For a comprehensive list of geo codes, language codes, script directions, and local country names, see:
+- [COUNTRY_LANGUAGE_REFERENCE.md](COUNTRY_LANGUAGE_REFERENCE.md)
+
 For questions or contributions, please contact the project maintainer.
