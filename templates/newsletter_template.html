@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ dir }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ hero.headline }}</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #f4f4f4; }
+        table { border-collapse: collapse; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f4f4f4; }
+        .main { margin: 0 auto; width: 100%; max-width: 600px; background-color: #ffffff; border-spacing: 0; font-family: sans-serif; color: #333333; }
+        .hero-img { width: 100%; max-width: 600px; height: auto; }
+        .content { padding: 20px 30px; }
+        h1 { font-size: 24px; margin: 0 0 15px; }
+        p { font-size: 16px; line-height: 1.5; margin: 0 0 15px; }
+        .cta-button { display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; }
+        .footer { background-color: #eeeeee; color: #777777; padding: 20px 30px; text-align: center; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <center class="wrapper">
+        <table class="main" width="100%">
+            <!-- HERO SECTION -->
+            <tr>
+                <td>
+                    <img src="{{ hero.image_url }}" alt="{{ hero.image_alt }}" class="hero-img">
+                </td>
+            </tr>
+            <tr>
+                <td class="content">
+                    <h1>{{ hero.headline }}</h1>
+                    <p>{{ hero.description }}</p>
+                    {% if hero.cta_learn_more_url %}
+                        <p><a href="{{ hero.cta_learn_more_url }}" style="color: #007bff;">Learn More</a></p>
+                    {% endif %}
+                    {% if hero.ctas_buttons %}
+                        <table width="100%" style="margin-top: 20px;">
+                            <tr>
+                                {% for cta in hero.ctas_buttons %}
+                                    <td align="center" style="padding: 5px;">
+                                        <a href="{{ cta.url }}" class="cta-button">{{ cta.text }}</a>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        </table>
+                    {% endif %}
+                </td>
+            </tr>
+
+            <!-- FEATURED STORIES -->
+            {% if stories %}
+                <tr>
+                    <td class="content">
+                        <table width="100%">
+                            {% for story in stories %}
+                                {% if loop.index0 % 2 == 0 %}<tr>{% endif %}
+                                <td style="padding: 10px; vertical-align: top; {% if stories|length == 2 %}width: 50%;{% endif %}">
+                                    <img src="{{ story.image_url }}" alt="{{ story.image_alt }}" style="width:100%; max-width: 270px; height:auto;">
+                                    <h2 style="font-size: 18px; margin: 10px 0 5px;">{{ story.headline }}</h2>
+                                    <p style="margin-bottom: 10px;">{{ story.description }}</p>
+                                    <p><a href="{{ story.url }}" style="color: #007bff; font-weight: bold;">Read Story</a></p>
+                                </td>
+                                {% if loop.index0 % 2 == 1 or loop.last %}</tr>{% endif %}
+                            {% endfor %}
+                        </table>
+                    </td>
+                </tr>
+            {% endif %}
+
+            <!-- FOOTER -->
+            <tr>
+                <td class="footer">
+                    {% if metadata.country_name %}<p style="margin: 0 0 10px; font-weight: bold;">{{ metadata.country_name }}</p>{% endif %}
+                    <p>{{ global.foundation_name }}</p>
+                    <p>{{ global.footer_text }}</p>
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
+</html>

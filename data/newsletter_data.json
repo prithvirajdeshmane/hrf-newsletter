@@ -1,0 +1,281 @@
+{
+  "global": {
+    "foundation_name": "Global Human Rights Foundation",
+    "footer_text": "© 2025 Global Human Rights Foundation. All rights reserved."
+  },
+  "us": {
+    "hero": {
+      "image_url": "images/us/hero.jpg",
+      "cta_learn_more_url": "https://example.com/us/report",
+      "ctas_buttons": [
+        {
+          "url": "https://example.com/us/report"
+        },
+        {
+          "url": "https://example.com/us/donate"
+        }
+      ]
+    },
+    "stories": [
+      {
+        "image_url": "images/us/story-1.jpg",
+        "url": "https://example.com/us/story-1"
+      }
+    ],
+    "translations": {
+      "en": {
+        "lang": "en",
+        "dir": "ltr",
+        "metadata": {
+          "country_name": "United States"
+        },
+        "hero": {
+          "image_alt": "Protestors holding signs for human rights.",
+          "headline": "New Report on Digital Privacy Rights in the US",
+          "description": "Our latest report uncovers significant challenges to digital privacy and offers recommendations for policymakers.",
+          "ctas_buttons": [
+            {
+              "text": "Read the Report"
+            },
+            {
+              "text": "Donate Now"
+            }
+          ]
+        },
+        "stories": [
+          {
+            "image_alt": "A person signing a petition.",
+            "headline": "Advocacy Win in California",
+            "description": "A new bill protecting free speech has been passed thanks to the efforts of our local advocates."
+          }
+        ]
+      }
+    }
+  },
+  "ca": {
+    "hero": {
+      "image_url": "images/ca/hero.jpg",
+      "ctas_buttons": [
+        {
+          "url": "https://example.com/ca/event"
+        }
+      ]
+    },
+    "translations": {
+      "en": {
+        "lang": "en",
+        "dir": "ltr",
+        "metadata": {
+          "country_name": "Canada"
+        },
+        "hero": {
+          "image_alt": "A diverse group of people at a community event.",
+          "headline": "Community Dialogue on Indigenous Rights in Quebec",
+          "description": "Join us for a vital conversation on advancing the rights and recognition of Indigenous communities in Quebec.",
+          "ctas_buttons": [
+            {
+              "text": "Register for Event"
+            }
+          ]
+        }
+      },
+      "fr": {
+        "lang": "fr",
+        "dir": "ltr",
+        "metadata": {
+          "country_name": "Canada"
+        },
+        "hero": {
+          "image_alt": "Un groupe diversifié de personnes lors d'un événement communautaire.",
+          "headline": "Dialogue communautaire sur les droits des autochtones au Québec",
+          "description": "Rejoignez-nous pour une conversation essentielle sur l'avancement des droits et de la reconnaissance des communautés autochtones au Québec.",
+          "ctas_buttons": [
+            {
+              "text": "Inscrivez-vous à l'événement"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "eg": {
+    "hero": {
+      "image_url": "images/eg/hero.jpg",
+      "cta_learn_more_url": "https://example.com/eg/report",
+      "ctas_buttons": [
+        {
+          "url": "https://example.com/eg/report"
+        }
+      ]
+    },
+    "stories": [
+      {
+        "image_url": "images/eg/story-1.jpg",
+        "url": "https://example.com/eg/story-1"
+      },
+      {
+        "image_url": "images/eg/story-2.jpg",
+        "url": "https://example.com/eg/story-2"
+      }
+    ],
+    "translations": {
+      "ar": {
+        "lang": "ar",
+        "dir": "rtl",
+        "hero": {
+          "image_alt": "صورة رمزية للعدالة وحقوق الإنسان في مصر.",
+          "headline": "تقرير جديد حول حرية التعبير في مصر",
+          "description": "يسلط تقريرنا الأخير الضوء على حالة حرية التعبير ويقدم توصيات للمجتمع المدني.",
+          "ctas_buttons": [
+            {
+              "text": "اقرأ التقرير"
+            }
+          ]
+        },
+        "stories": [
+          {
+            "image_alt": "ناشط حقوقي يتحدث في مؤتمر.",
+            "headline": "ورشة عمل حول الأمان الرقمي للنشطاء",
+            "description": "نظمنا ورشة عمل لتزويد النشطاء بالمهارات اللازمة لحماية أنفسهم على الإنترنت."
+          },
+          {
+            "image_alt": "مجموعة من المتطوعين يوزعون مساعدات.",
+            "headline": "حملة لدعم اللاجئين في القاهرة",
+            "description": "أطلقنا حملة جديدة لتقديم الدعم والمساعدة للاجئين والمهاجرين في القاهرة."
+          }
+        ]
+      },
+      "en": {
+        "lang": "en",
+        "dir": "ltr",
+        "hero": {
+          "image_alt": "Symbolic image of justice and human rights in Egypt.",
+          "headline": "New Report on Freedom of Expression in Egypt",
+          "description": "Our latest report highlights the state of free expression and provides recommendations for civil society.",
+          "ctas_buttons": [
+            {
+              "text": "Read the Report"
+            }
+          ]
+        },
+        "stories": [
+          {
+            "image_alt": "A human rights activist speaks at a conference.",
+            "headline": "Digital Security Workshop for Activists",
+            "description": "We organized a workshop to equip activists with the skills needed to protect themselves online."
+          },
+          {
+            "image_alt": "A group of volunteers distributing aid.",
+            "headline": "Campaign to Support Refugees in Cairo",
+            "description": "We launched a new campaign to provide support and assistance to refugees and migrants in Cairo."
+          }
+        ]
+      }
+    }
+  },
+  "cf": {
+    "hero": {
+      "image_url": "images/cf/hero.jpg",
+      "ctas_buttons": [
+        {
+          "url": "https://example.com/cf/action"
+        }
+      ]
+    },
+    "translations": {
+      "en": {
+        "lang": "en",
+        "dir": "ltr",
+        "metadata": {
+          "country_name": "Central African Republic"
+        },
+        "hero": {
+          "image_alt": "A landscape view of the Central African Republic.",
+          "headline": "New Initiative to Support Local Journalists",
+          "description": "We are launching a new program to provide resources and training for journalists in the region.",
+          "ctas_buttons": [
+            {
+              "text": "Learn More"
+            }
+          ]
+        }
+      },
+      "fr": {
+        "lang": "fr",
+        "dir": "ltr",
+        "metadata": {
+          "country_name": "République Centrafricaine"
+        },
+        "hero": {
+          "image_alt": "Une vue de paysage de la République Centrafricaine.",
+          "headline": "Nouvelle initiative pour soutenir les journalistes locaux",
+          "description": "Nous lançons un nouveau programme pour fournir des ressources et une formation aux journalistes de la région.",
+          "ctas_buttons": [
+            {
+              "text": "En savoir plus"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "ne": {
+    "hero": {
+      "image_url": "images/ne/hero.jpg",
+      "ctas_buttons": [
+        {
+          "url": "https://example.com/ne/action"
+        }
+      ]
+    },
+    "translations": {
+      "fr": {
+        "lang": "fr",
+        "dir": "ltr",
+        "metadata": {
+          "country_name": "Niger"
+        },
+        "hero": {
+          "image_alt": "Une vue de paysage du Niger.",
+          "headline": "Nouvelle initiative pour soutenir les journalistes locaux",
+          "description": "Nous lançons un nouveau programme pour fournir des ressources et une formation aux journalistes de la région.",
+          "ctas_buttons": [
+            {
+              "text": "En savoir plus"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "om": {},
+  "cn": {
+  "hero": {
+    "image_url": "images/cn/hero.jpg",
+    "ctas_buttons": [
+      {
+        "url": "https://example.com/cn/action"
+      }
+    ]
+  },
+  "translations": {
+    "zh": {
+      "lang": "zh-Hans",
+      "dir": "ltr",
+      "metadata": {
+        "country_name": "中国"
+      },
+      "hero": {
+        "image_alt": "中国的象征性景观。",
+        "headline": "支持中国记者的新计划",
+        "description": "我们正在启动一个新项目，为该地区的记者提供资源和培训。",
+        "ctas_buttons": [
+          {
+            "text": "了解更多"
+          }
+        ]
+      }
+    }
+  }
+}
+}
