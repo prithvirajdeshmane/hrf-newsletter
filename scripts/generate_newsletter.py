@@ -72,27 +72,25 @@ def get_geo_data(data, geo_code):
     # If none of the above conditions were met, the geo_code is invalid.
     return None, None
 
-def generate_newsletter(geo):
-    """Generates a newsletter for a specific geo."""
+def generate_newsletter_for_geo_lang(geo, lang):
+    """Generates a newsletter for a specific geo and language."""
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
     data_path = os.path.join(project_root, 'data', 'newsletter_data.json')
     with open(data_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    geo_data, resolved_geo = get_geo_data(data, geo)
+    geo_code = f"{geo}-{lang}"
+    geo_data, resolved_geo = get_geo_data(data, geo_code)
     if geo_data == 'EMPTY':
         print(f"\nError: Geo '{geo}' exists in the data, but contains no content or translations.")
         print("Please provide newsletter content for this geo in the JSON file.")
         return
     if not geo_data:
-        print(f"\nError: Geo '{geo}' could not be resolved.")
-        print("Please use a valid geo-lang code (e.g., 'ca-en') or a base geo with available translations.")
+        print(f"\nError: Geo '{geo_code}' could not be resolved.")
+        print("Please use a valid geo code with translations.")
         return
 
     context = {**geo_data, 'global': data['global']}
-
-    # Validate that all referenced images exist
     missing_images = validate_image_paths(context, project_root)
     if missing_images:
         print(f"\nError: Could not find the following image files for geo '{resolved_geo}':")
@@ -104,21 +102,19 @@ def generate_newsletter(geo):
     template_dir = os.path.join(project_root, 'templates')
     env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)
     template = env.get_template('newsletter_template.html')
-
     html_content = template.render(context)
 
     base_geo = resolved_geo.split('-')[0]
     output_dir = os.path.join(project_root, 'generated_newsletters', base_geo)
     os.makedirs(output_dir, exist_ok=True)
-
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     output_filename = f'newsletter_{resolved_geo}_{timestamp}.html'
     output_path = os.path.join(output_dir, output_filename)
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
-
     print(f"\nSuccessfully generated newsletter for geo '{resolved_geo}'.")
     print(f"Output saved to: {output_path}")
+
 
 def find_image_urls(data):
     """Recursively finds all values for the key 'image_url' in a nested dict/list."""
@@ -144,8 +140,27 @@ def validate_image_paths(context, project_root):
             missing_paths.append(url)
     return missing_paths
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generate a newsletter for a specific geo.')
-    parser.add_argument('geo', help="The geo-lang code (e.g., 'us-en', 'ca-fr').")
+def main():
+    parser = argparse.ArgumentParser(description='Generate newsletters for all translations of a geo.')
+    parser.add_argument('geo', help="The geo code (e.g., 'ca', 'us').")
     args = parser.parse_args()
-    generate_newsletter(args.geo)
+    geo_input = args.geo
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_path = os.path.join(project_root, 'data', 'newsletter_data.json')
+    with open(data_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    if geo_input not in data:
+        print(f"\nError: Geo '{geo_input}' could not be resolved.")
+        print("Please use a valid geo code.")
+        return
+    geo_block = data[geo_input]
+    translations = geo_block.get('translations')
+    if not translations or not isinstance(translations, dict) or len(translations) == 0:
+        print(f"\nError: Geo '{geo_input}' must have a non-empty 'translations' block.")
+        print("Please provide at least one language translation for this geo in the JSON file.")
+        return
+    for lang in translations.keys():
+        generate_newsletter_for_geo_lang(geo_input, lang)
+
+if __name__ == '__main__':
+    main()

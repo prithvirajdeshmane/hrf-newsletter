@@ -20,28 +20,32 @@ A Python command-line tool for generating localized, multilingual email newslett
 ### 1. Edit Content
 - Update `data/newsletter_data.json` to add or modify geos and languages.
 - Each geo (e.g., `us`, `ca`, `cn`, `id`) is a top-level key.
-- Each geo can have a `translations` block for multilingual content (see below).
+- **Each geo must have a `translations` block** for multilingual content (see below).
 
-### 2. Generate a Newsletter
+### 2. Generate Newsletters for a Geo
 Run:
 ```bash
-python scripts/generate_newsletter.py <geo[-lang]>
+python scripts/generate_newsletter.py <geo>
 ```
 Examples:
-- `python scripts/generate_newsletter.py us` (defaults to English for US)
-- `python scripts/generate_newsletter.py ca` (ca OR ca-en = English)
-- `python scripts/generate_newsletter.py ca-fr` (Canadian French)
-- `python scripts/generate_newsletter.py cn` (defaults to Chinese for China)
-- `python scripts/generate_newsletter.py ne` (defaults to French for Niger)
+- `python scripts/generate_newsletter.py us` (generates all translations for US, e.g., `us-en`)
+- `python scripts/generate_newsletter.py ca` (generates both `ca-en` and `ca-fr`)
+- `python scripts/generate_newsletter.py cn` (generates all translations for China)
+- `python scripts/generate_newsletter.py ne` (generates all translations for Niger)
 
-#### Fallback Logic
-- If you provide only the geo (e.g., `ca`), the script:
-  - Uses English (`en`) if available in `translations`.
-  - Otherwise, uses the first available language in the `translations` block.
-- If you provide a full geo-lang code (e.g., `ca-fr`), it will use that specific translation.
+#### How It Works
+- The script takes only the base geo code as input (never hyphenated geo-lang).
+- For each language listed in the `translations` block for that geo, a newsletter is generated (e.g., `ca-en`, `ca-fr`).
+- All output files are saved in `generated_newsletters/<geo>/`.
 
-#### Output
-- Newsletters are saved in `generated_newsletters/<geo>/newsletter_<geo-lang>_<timestamp>.html`.
+#### Output Example
+If you run:
+```bash
+python scripts/generate_newsletter.py ca
+```
+You will get:
+- `generated_newsletters/ca/newsletter_ca-en_<timestamp>.html`
+- `generated_newsletters/ca/newsletter_ca-fr_<timestamp>.html`
 
 ### 3. Image Validation
 - All image paths referenced in the JSON (e.g., `image_url`) must exist in the `images/` directory.
