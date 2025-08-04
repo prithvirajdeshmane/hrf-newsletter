@@ -117,22 +117,26 @@ def generate_newsletter_for_geo_lang(geo, lang):
     print(f"\nSuccessfully generated newsletter for geo '{resolved_geo}'.")
     print(f"Output saved to: {output_path}")
 
-    # --- Upload images to Mailchimp and rewrite URLs in HTML ---
+    # --- Compress, upload images to Mailchimp, and rewrite URLs in HTML ---
     try:
         from mailchimp_image_upload import upload_image_to_mailchimp, MailchimpImageUploadError
+        from image_utils import compress_image_if_needed
+
         image_urls = find_image_urls(context)
         local_to_mailchimp_url = {}
+
         for url in set(image_urls):
-            # Remove leading ./ or ../ for matching
             clean_url = url.lstrip('./')
             image_path = os.path.join(project_root, clean_url.replace('/', os.sep))
-            try:
-                mailchimp_url = upload_image_to_mailchimp(image_path)
-            except MailchimpImageUploadError as img_err:
-                print(f"\nERROR: Failed to upload image '{image_path}' to Mailchimp for geo '{resolved_geo}'.")
-                print(f"Reason: {img_err}")
-                print("No further uploads will be attempted. Please resolve the issue and try again.")
-                sys.exit(1)
+            
+            if not os.path.exists(image_path):
+                print(f"Warning: Image not found at '{image_path}'. Skipping upload.")
+                continue
+
+            # Compress the image if it's too large before uploading
+            compressed_image_path = compress_image_if_needed(image_path)
+
+            mailchimp_url = upload_image_to_mailchimp(compressed_image_path)
             local_to_mailchimp_url[url] = mailchimp_url
             # Also map cleaned path for robustness
             local_to_mailchimp_url[clean_url] = mailchimp_url
