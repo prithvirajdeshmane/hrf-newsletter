@@ -21,6 +21,7 @@ A Python command-line tool for generating localized, multilingual email newslett
 - Update `data/newsletter_data.json` to add or modify geos and languages.
 - Each geo (e.g., `us`, `ca`, `cn`, `id`) is a top-level key.
 - **Each geo must have a `translations` block** for multilingual content (see below).
+- Add your newsletter images to the `images/` directory. For the global logo banner, place your logo at `images/global/HRF-Logo.png`.
 
 ### 2. Generate Newsletters for a Geo
 Run:
@@ -47,8 +48,14 @@ You will get:
 - `generated_newsletters/ca/newsletter_ca-en_<timestamp>.html`
 - `generated_newsletters/ca/newsletter_ca-fr_<timestamp>.html`
 
-### 3. Image Validation
+### 2a. Global Logo Banner
+- The newsletter includes a banner at the top with your logo centered.
+- Place your logo at `images/global/HRF-Logo.png` (PNG recommended, max width 200px for best appearance).
+- The banner will be the same width as the rest of the content.
+
+### 3. Image Validation & Path Conventions
 - All image paths referenced in the JSON (e.g., `image_url`) must exist in the `images/` directory.
+- For local viewing, the template automatically prefixes image paths with `../../` so images display correctly when you open the generated HTML files directly in your browser.
 - If any image is missing, the script will print a clear error and abort generation.
 
 ### 4. Error Handling
@@ -91,8 +98,11 @@ You will get:
 - Add a `translations` block with language codes as keys (e.g., `en`, `fr`, `zh`, `id`).
 - Provide all required fields (see examples above).
 
-### 7. Sending the Newsletter
-(Coming soon)
+### 7. Troubleshooting: Images Not Displaying
+- If images show as broken/404 when opening the HTML file in your browser, ensure:
+  - The referenced image paths in your JSON are correct and the files exist.
+  - You are opening the HTML from the correct location (e.g., `generated_newsletters/<geo>/`).
+  - The template prefixes image URLs with `../../` to resolve from the newsletter output folder to the project root.
 
 ---
 

@@ -5,21 +5,25 @@
   },
   "us": {
     "hero": {
-      "image_url": "images/us/hero.jpg",
-      "cta_learn_more_url": "https://example.com/us/report",
+      "image_url": "./images/us/hero.jpg",
+      "cta_learn_more_url": "https://www.nytimes.com/2025/08/02/nyregion/earthquake-new-york-new-jersey.html",
       "ctas_buttons": [
         {
-          "url": "https://example.com/us/report"
+          "url": "#"
         },
         {
-          "url": "https://example.com/us/donate"
+          "url": "#"
         }
       ]
     },
     "stories": [
       {
-        "image_url": "images/us/story-1.jpg",
-        "url": "https://example.com/us/story-1"
+        "image_url": "./images/us/story-1.jpg",
+        "url": "https://www.bbc.com/news/articles/c0r7qlwg4zro"
+      },
+      {
+        "image_url": "./images/us/story-2.jpg",
+        "url": "https://www.bbc.com/news/articles/c0r7qlwg4zro"
       }
     ],
     "translations": {
@@ -31,11 +35,11 @@
         },
         "hero": {
           "image_alt": "Protestors holding signs for human rights.",
-          "headline": "New Report on Digital Privacy Rights in the US",
-          "description": "Our latest report uncovers significant challenges to digital privacy and offers recommendations for policymakers.",
+          "headline": "Tremors Felt In New York As 3-Magnitude Earthquake Hits New Jersey",
+          "description": "One resident of New York's Brooklyn borough described it as a very brief tremor, just a slight swaying for a moment.",
           "ctas_buttons": [
             {
-              "text": "Read the Report"
+              "text": "Volunteer"
             },
             {
               "text": "Donate Now"
@@ -44,9 +48,14 @@
         },
         "stories": [
           {
-            "image_alt": "A person signing a petition.",
-            "headline": "Advocacy Win in California",
-            "description": "A new bill protecting free speech has been passed thanks to the efforts of our local advocates."
+            "image_alt": "Russian volcano",
+            "headline": "Russian volcano erupts for first time in more than 500 years",
+            "description": "A volcano in far eastern Russia has erupted for the first time in more than 500 years."
+          },
+          {
+            "image_alt": "Children holding up a sunshine flag",
+            "headline": "Children's NGO 'Future' partners with HRF",
+            "description": "HRF is glad to now be a partner of Children's NGO 'Future' and will aim to build global support and awareness."
           }
         ]
       }
