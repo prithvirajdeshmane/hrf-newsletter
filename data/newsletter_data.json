@@ -1,7 +1,8 @@
 {
   "global": {
     "foundation_name": "Global Human Rights Foundation",
-    "footer_text": "© 2025 Global Human Rights Foundation. All rights reserved."
+    "footer_text": "© 2025 Global Human Rights Foundation. All rights reserved.",
+    "logo_url": "images/global/HRF-Logo.png"
   },
   "us": {
     "hero": {

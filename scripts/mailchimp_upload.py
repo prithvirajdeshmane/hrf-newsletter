@@ -25,7 +25,7 @@ def upload_template_to_mailchimp(html_content, template_name):
         "name": template_name,
         "html": html_content
     }
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, json=data, verify=False)
     if response.status_code not in (200, 201):
         try:
             error_detail = response.json().get('detail', response.text)

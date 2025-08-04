@@ -1,7 +1,7 @@
 import os
+import base64
 import requests
 from dotenv import load_dotenv
-from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 class MailchimpImageUploadError(Exception):
     pass
@@ -30,12 +30,21 @@ def upload_image_to_mailchimp(image_path):
         "Accept": "application/json"
     }
     filename = os.path.basename(image_path)
+    
+    # Read and encode the image as base64
     with open(image_path, 'rb') as f:
-        m = MultipartEncoder(
-            fields={'name': filename, 'file_data': (filename, f, 'image/jpeg')}
-        )
-        headers['Content-Type'] = m.content_type
-        response = requests.post(url, data=m, headers=headers)
+        image_data = f.read()
+        base64_data = base64.b64encode(image_data).decode('utf-8')
+    
+    # Use JSON payload with base64 data instead of multipart form
+    headers['Content-Type'] = 'application/json'
+    data = {
+        "name": filename,
+        "file_data": base64_data,
+        "type": "image"
+    }
+    
+    response = requests.post(url, headers=headers, json=data, verify=False)
     if response.status_code not in (200, 201):
         try:
             error_json = response.json()

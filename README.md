@@ -14,6 +14,13 @@ A Python command-line tool for generating localized, multilingual email newslett
    ```bash
    pip install -r requirements.txt
    ```
+3. Set up Mailchimp API credentials:
+   - Create a `.env` file in the project root
+   - Add your Mailchimp API credentials:
+     ```
+     MAILCHIMP_API_KEY=your_api_key_here
+     MAILCHIMP_SERVER_PREFIX=your_server_prefix_here
+     ```
 
 ## Features
 
@@ -22,8 +29,12 @@ A Python command-line tool for generating localized, multilingual email newslett
 - **Dynamic Image Path Handling**: Automatically adjusts image paths for correct local viewing.
 - **Mailchimp Integration**: 
   - **Template Upload**: Automatically uploads each generated newsletter as a new template in Mailchimp.
-  - **Image Hosting**: Automatically uploads all local images to the Mailchimp Content Studio and replaces local paths with public Mailchimp URLs, ensuring images render correctly in emails.
+  - **Comprehensive Image Upload**: Automatically uploads ALL images from `images/global/` and `images/{geo}/` folders to Mailchimp Content Studio, regardless of whether they're referenced in the JSON data.
+  - **Image Compression**: Automatically compresses images larger than 1MB using Pillow before upload.
+  - **Smart URL Replacement**: Replaces all local image URLs in the HTML with Mailchimp-hosted URLs, handling multiple URL formats (`./images/...`, `/images/...`, `images/...`).
+  - **Global Image Support**: Ensures global images (like logos) are included in every newsletter upload.
 - **Error Handling**: Halts on any image or template upload failure with a descriptive error message.
+- **Upload Summary**: Displays a summary of all successfully uploaded newsletters at the end of each run.
 
 ## Usage
 
@@ -31,7 +42,10 @@ A Python command-line tool for generating localized, multilingual email newslett
 - Update `data/newsletter_data.json` to add or modify geos and languages.
 - Each geo (e.g., `us`, `ca`, `cn`, `id`) is a top-level key.
 - **Each geo must have a `translations` block** for multilingual content (see below).
-- Add your newsletter images to the `images/` directory. For the global logo banner, place your logo at `images/global/HRF-Logo.png`.
+- Add your newsletter images to the `images/` directory:
+  - **Global images** (shared across all geos): Place in `images/global/` (e.g., `images/global/HRF-Logo.png`)
+  - **Geo-specific images**: Place in `images/{geo}/` (e.g., `images/us/hero.jpg`, `images/ch/story-1.jpg`)
+- **Important**: The script uploads ALL images from both `images/global/` and `images/{geo}/` folders to Mailchimp, ensuring comprehensive image availability.
 
 ### 2. Generate Newsletters for a Geo
 Run:
@@ -79,12 +93,23 @@ You will get:
 ### 2a. Global Logo Banner
 - The newsletter includes a banner at the top with your logo centered.
 - Place your logo at `images/global/HRF-Logo.png` (PNG recommended, max width 200px for best appearance).
+- **Important**: Ensure the `logo_url` field is defined in the `global` section of your `newsletter_data.json`:
+  ```json
+  "global": {
+    "foundation_name": "Global Human Rights Foundation",
+    "footer_text": "© 2025 Global Human Rights Foundation. All rights reserved.",
+    "logo_url": "images/global/HRF-Logo.png"
+  }
+  ```
 - The banner will be the same width as the rest of the content.
 
-### 3. Image Validation & Path Conventions
-- All image paths referenced in the JSON (e.g., `image_url`) must exist in the `images/` directory.
-- For local viewing, the template automatically prefixes image paths with `../../` so images display correctly when you open the generated HTML files directly in your browser.
-- If any image is missing, the script will print a clear error and abort generation.
+### 3. Image Handling & Mailchimp Integration
+- **Automatic Upload**: The script automatically uploads ALL images from `images/global/` and `images/{geo}/` folders to Mailchimp Content Studio.
+- **Image Compression**: Images larger than 1MB are automatically compressed using Pillow before upload.
+- **URL Replacement**: All local image URLs in the generated HTML are replaced with Mailchimp-hosted URLs for email compatibility.
+- **Folder Validation**: The script validates that both `images/global/` and `images/{geo}/` folders exist before processing.
+- **Supported Formats**: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp` files are automatically detected and uploaded.
+- **Local Viewing**: For local HTML file viewing, image paths work correctly when opening files from the `generated_newsletters/` folder.
 
 ### 4. Error Handling
 - If you provide a geo code that exists but is empty, you'll see:
@@ -126,11 +151,21 @@ You will get:
 - Add a `translations` block with language codes as keys (e.g., `en`, `fr`, `zh`, `id`).
 - Provide all required fields (see examples above).
 
-### 7. Troubleshooting: Images Not Displaying
-- If images show as broken/404 when opening the HTML file in your browser, ensure:
-  - The referenced image paths in your JSON are correct and the files exist.
-  - You are opening the HTML from the correct location (e.g., `generated_newsletters/<geo>/`).
-  - The template prefixes image URLs with `../../` to resolve from the newsletter output folder to the project root.
+### 7. Troubleshooting
+
+#### Images Not Displaying Locally
+- If images show as broken/404 when opening the HTML file in your browser:
+  - Ensure you're opening the HTML from the correct location (`generated_newsletters/<geo>/`).
+  - Verify that image files exist in the appropriate `images/global/` or `images/{geo}/` folders.
+
+#### Mailchimp Template Issues
+- If images don't appear in uploaded Mailchimp templates:
+  - Check that the `logo_url` field is defined in the `global` section of `newsletter_data.json`.
+  - Verify that image files exist in the expected folders before running the script.
+  - Review the console output for successful image uploads and URL replacements.
+
+#### Network/SSL Issues
+- If you encounter SSL certificate errors during Mailchimp uploads, this may be due to corporate network SSL inspection. The script includes workarounds for common network security configurations.
 
 ---
 

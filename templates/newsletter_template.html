@@ -14,6 +14,7 @@
         h1 { font-size: 24px; margin: 0 0 15px; }
         p { font-size: 16px; line-height: 1.5; margin: 0 0 15px; }
         .cta-button { display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; }
+        .story-cell.two-stories { width: 50%; }
         .footer { background-color: #eeeeee; color: #777777; padding: 20px 30px; text-align: center; font-size: 12px; }
     </style>
 </head>
@@ -23,7 +24,7 @@
         <table class="main" width="100%" style="background: #fff; border-bottom: 1px solid #eee; margin: 0 auto;">
             <tr>
                 <td align="center" style="padding: 24px 0 16px 0;">
-                    <img src="../../images/global/HRF-Logo.png" alt="Foundation Logo" style="max-width: 200px; width: 100%; height: auto; display: block; margin: 0 auto;">
+                    <img src="{{ global.logo_url }}" alt="Foundation Logo" style="max-width: 200px; width: 100%; height: auto; display: block; margin: 0 auto;">
                 </td>
             </tr>
         </table>
@@ -31,7 +32,7 @@
             <!-- HERO SECTION -->
             <tr>
                 <td>
-                    <img src="../../{{ hero.image_url.lstrip('./') }}" alt="{{ hero.image_alt }}" class="hero-img">
+                    <img src="{{ hero.image_url }}" alt="{{ hero.image_alt }}" class="hero-img">
                 </td>
             </tr>
             <tr>
@@ -62,8 +63,8 @@
                         <table width="100%">
                             {% for story in stories %}
                                 {% if loop.index0 % 2 == 0 %}<tr>{% endif %}
-                                <td style="padding: 10px; vertical-align: top; {% if stories|length == 2 %}width: 50%;{% endif %}">
-                                    <img src="../../{{ story.image_url.lstrip('./') }}" alt="{{ story.image_alt }}" style="width:100%; max-width: 270px; height:auto;">
+                                <td class="story-cell {% if stories|length == 2 %}two-stories{% endif %}" style="padding: 10px; vertical-align: top;">
+                                    <img src="{{ story.image_url }}" alt="{{ story.image_alt }}" style="width:100%; max-width: 270px; height:auto;">
                                     <h2 style="font-size: 18px; margin: 10px 0 5px;">{{ story.headline }}</h2>
                                     <p style="margin-bottom: 10px;">{{ story.description }}</p>
                                     <p><a href="{{ story.url }}" style="color: #007bff; font-weight: bold;">Read Story</a></p>
