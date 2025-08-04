@@ -4,23 +4,71 @@ A Python command-line tool for generating localized, multilingual email newslett
 
 ---
 
+## Table of Contents
+- [Prerequisites](#prerequisites)
+- [Project Structure](#project-structure)
+- [Setup](#setup)
+- [Features](#features)
+- [Quick Start Guide](#quick-start-guide)
+- [Detailed Usage](#detailed-usage)
+- [Troubleshooting](#troubleshooting)
+- [Reference](#reference)
+
+---
+
+## Project Structure
+```
+hrf-newsletter/
+├── scripts/
+│   ├── generate_newsletter.py          # Main script
+│   ├── mailchimp_template_upload.py    # Template upload to Mailchimp
+│   ├── mailchimp_image_upload.py       # Image upload to Mailchimp
+│   ├── image_utils.py                  # Image compression utilities
+│   └── utils/
+│       └── test_mailchimp_connection.py # Connection testing utility
+├── templates/
+│   └── newsletter_template.html        # Jinja2 newsletter template
+├── data/
+│   └── newsletter_data.json           # Newsletter content configuration
+├── images/
+│   ├── global/                        # Global images (logos, etc.)
+│   └── {geo}/                         # Geo-specific images
+├── generated_newsletters/             # Output directory (auto-created)
+├── requirements.txt                   # Python dependencies
+├── .env                              # Environment variables (create this)
+└── README.md
+```
+
 ## Prerequisites
-- Python 3.x
-- Jinja2 (`pip install Jinja2`)
+- Python 3.7 or higher
+- Mailchimp Marketing API account and credentials
+- Internet connection for Mailchimp integration
 
 ## Setup
-1. Clone this repository.
-2. Install dependencies:
+1. **Clone this repository**
+   ```bash
+   git clone <repository-url>
+   cd hrf-newsletter
+   ```
+
+2. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
-3. Set up Mailchimp API credentials:
+
+3. **Set up Mailchimp API credentials**
    - Create a `.env` file in the project root
    - Add your Mailchimp API credentials:
-     ```
+     ```env
      MAILCHIMP_API_KEY=your_api_key_here
      MAILCHIMP_SERVER_PREFIX=your_server_prefix_here
      ```
+   - Get these credentials from your Mailchimp account under Account > Extras > API keys
+
+4. **Test your connection** (optional)
+   ```bash
+   python scripts/utils/test_mailchimp_connection.py
+   ```
 
 ## Features
 
@@ -36,7 +84,9 @@ A Python command-line tool for generating localized, multilingual email newslett
 - **Error Handling**: Halts on any image or template upload failure with a descriptive error message.
 - **Upload Summary**: Displays a summary of all successfully uploaded newsletters at the end of each run.
 
-## Usage
+## Quick Start Guide
+
+## Detailed Usage
 
 ### 1. Edit Content
 - Update `data/newsletter_data.json` to add or modify geos and languages.
@@ -64,6 +114,89 @@ Install the required Python packages:
 pip install -r requirements.txt
 ```
 
+## 🚀 Setup Instructions
+
+### 1. **Choose Your Geo (Country)**
+- Select a `geo` code for the country you want to create a newsletter for.  
+  Example: `us` for United States, `ca` for Canada, `mx` for Mexico, etc.
+- Refer to [`COUNTRY_LANGUAGE_REFERENCE.md`](./COUNTRY_LANGUAGE_REFERENCE.md) for the list of supported country-language codes.
+
+---
+
+### 2. **Prepare Your JSON Configuration**
+- Open the main configuration file (`data/newsletter_data.json`).
+- Add a new block for your country using the geo code.
+
+Each geo must include the following:
+
+#### 🔹 `hero` Section (Required)
+- Contains the main news highlight.
+- Must include:
+  - `image_url`
+  - `cta_learn_more_url` (optional)
+  - `ctas_buttons` with one or more `url`s
+
+#### 🔹 `stories` Section (Optional)
+- You may include up to **two** additional stories.
+- Each story must include:
+  - `image_url`
+  - `url`
+
+#### 🔹 `translations` Section (Required)
+- Define content in **each supported language** for the geo.
+- For each language, include:
+  - `lang` and `dir`
+  - `metadata.country_name`
+  - `hero` section with:
+    - `image_alt`
+    - `headline`
+    - `description`
+    - `ctas_buttons.text` (button labels)
+  - Optional `stories` with:
+    - `image_alt`
+    - `headline`
+    - `description`
+
+> ⚠️ **Note:** Ensure your JSON structure is correct and follows the nesting pattern. Malformed JSON will break the template generation process.
+
+---
+
+### 3. **Add Image Assets**
+- Create an image directory for your geo under the project’s `images/` folder.  
+  Example:  
+  ```
+  images/us/
+  ├── hero.jpg
+  ├── story-1.jpg  (optional)
+  └── story-2.jpg  (optional)
+  ```
+- **File names must match the following convention:**
+  - `hero.jpg`
+  - `story-1.jpg` (if used)
+  - `story-2.jpg` (if used)
+
+---
+
+### 4. **Run the Program**
+Once your JSON and images are in place:
+
+```bash
+# Example command to generate templates
+python scripts/generate_newsletter.py <geo>
+```
+
+Templates will be created for **each language** defined in the `translations` section for the selected geo.
+
+---
+
+## ✅ Best Practices
+
+- Use absolute URLs for all external links (e.g., CTAs, story links).
+- Keep text content under reasonable length for email readability.
+- Make sure all image paths are valid and correctly placed in the `images/<geo>/` folder.
+- Validate your JSON using a linter or online tool before running the script.
+
+
 ### Running the Script
 
 To generate newsletters for all translations under a specific geo, run the script with the base geo code. For example, to generate newsletters for the US and Switzerland (`ch`):
@@ -71,7 +204,10 @@ To generate newsletters for all translations under a specific geo, run the scrip
 ```bash
 python scripts/generate_newsletter.py us
 python scripts/generate_newsletter.py ch
-```` (generates all translations for US, e.g., `us-en`)
+```
+
+Examples:
+- `python scripts/generate_newsletter.py us` (generates all translations for US, e.g., `us-en`)
 - `python scripts/generate_newsletter.py ca` (generates both `ca-en` and `ca-fr`)
 - `python scripts/generate_newsletter.py cn` (generates all translations for China)
 - `python scripts/generate_newsletter.py ne` (generates all translations for Niger)
@@ -166,6 +302,30 @@ You will get:
 
 #### Network/SSL Issues
 - If you encounter SSL certificate errors during Mailchimp uploads, this may be due to corporate network SSL inspection. The script includes workarounds for common network security configurations.
+
+---
+
+## Reference
+
+### Dependencies
+The project requires the following Python packages (automatically installed via `requirements.txt`):
+- **`Jinja2`** - Template rendering engine for generating HTML newsletters
+- **`Pillow`** - Image processing and compression (for images >1MB)
+- **`requests`** - HTTP requests to Mailchimp API
+- **`python-dotenv`** - Environment variable management for API credentials
+
+### Script Organization
+After recent refactoring, the scripts are organized as follows:
+- **`generate_newsletter.py`** - Main entry point for newsletter generation
+- **`mailchimp_template_upload.py`** - Handles HTML template uploads to Mailchimp (renamed from `mailchimp_upload.py`)
+- **`mailchimp_image_upload.py`** - Handles image uploads to Mailchimp Content Studio
+- **`image_utils.py`** - Image compression and processing utilities
+- **`utils/test_mailchimp_connection.py`** - Standalone connection testing utility (moved from root scripts folder)
+
+### Removed Scripts
+The following scripts were removed during reorganization as they were redundant or incomplete:
+- `mailchimp_base64_upload.py` - Functionality merged into `mailchimp_image_upload.py`
+- `send_newsletter.py` - Incomplete email sending simulation
 
 ---
 
