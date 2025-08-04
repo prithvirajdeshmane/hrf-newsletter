@@ -15,6 +15,16 @@ A Python command-line tool for generating localized, multilingual email newslett
    pip install -r requirements.txt
    ```
 
+## Features
+
+- **Automated Newsletter Generation**: Creates localized HTML newsletters from a central JSON data source.
+- **Multi-Language Support**: Supports multiple translations for each geographical region (geo).
+- **Dynamic Image Path Handling**: Automatically adjusts image paths for correct local viewing.
+- **Mailchimp Integration**: 
+  - **Template Upload**: Automatically uploads each generated newsletter as a new template in Mailchimp.
+  - **Image Hosting**: Automatically uploads all local images to the Mailchimp Content Studio and replaces local paths with public Mailchimp URLs, ensuring images render correctly in emails.
+- **Error Handling**: Halts on any image or template upload failure with a descriptive error message.
+
 ## Usage
 
 ### 1. Edit Content
@@ -29,7 +39,25 @@ Run:
 python scripts/generate_newsletter.py <geo>
 ```
 Examples:
-- `python scripts/generate_newsletter.py us` (generates all translations for US, e.g., `us-en`)
+- `- `MAILCHIMP_API_KEY`: Your Mailchimp Marketing API key.
+- `MAILCHIMP_SERVER_PREFIX`: The server prefix from your API key (e.g., `us21`).
+
+### Dependencies
+
+Install the required Python packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Running the Script
+
+To generate newsletters for all translations under a specific geo, run the script with the base geo code. For example, to generate newsletters for the US and Switzerland (`ch`):
+
+```bash
+python scripts/generate_newsletter.py us
+python scripts/generate_newsletter.py ch
+```` (generates all translations for US, e.g., `us-en`)
 - `python scripts/generate_newsletter.py ca` (generates both `ca-en` and `ca-fr`)
 - `python scripts/generate_newsletter.py cn` (generates all translations for China)
 - `python scripts/generate_newsletter.py ne` (generates all translations for Niger)

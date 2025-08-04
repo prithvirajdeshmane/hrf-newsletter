@@ -292,5 +292,95 @@
         }
       }
     }
+  },
+  "ch": {
+    "hero": {
+      "image_url": "./images/ch/hero.jpg",
+      "cta_learn_more_url": "https://www.nytimes.com/2025/08/02/nyregion/earthquake-new-york-new-jersey.html",
+      "ctas_buttons": [
+        {
+          "url": "#"
+        },
+        {
+          "url": "#"
+        }
+      ]
+    },
+    "stories": [
+      {
+        "image_url": "./images/ch/story-1.jpg",
+        "url": "https://www.bbc.com/news/articles/c0r7qlwg4zro"
+      },
+      {
+        "image_url": "./images/ch/story-2.jpg",
+        "url": "https://www.bbc.com/news/articles/c0r7qlwg4zro"
+      }
+    ],
+    "translations": {
+      "de": {
+        "lang": "de",
+        "dir": "ltr",
+        "metadata": {
+          "country_name": "Schweiz"
+        },
+        "hero": {
+          "image_alt": "Protestierende halten Schilder für Menschenrechte.",
+          "headline": "Erschütterungen in New York, als ein Erdbeben der Stärke 3 New Jersey trifft",
+          "description": "Ein Bewohner von Brooklyn, New York, beschrieb es als sehr kurzes Beben, nur ein leichtes Schwanken für einen Moment.",
+          "ctas_buttons": [
+            {
+              "text": "Freiwillig helfen"
+            },
+            {
+              "text": "Jetzt spenden"
+            }
+          ]
+        },
+        "stories": [
+          {
+            "image_alt": "Russischer Vulkan",
+            "headline": "Russischer Vulkan bricht zum ersten Mal seit über 500 Jahren aus",
+            "description": "Ein Vulkan im äußersten Osten Russlands ist zum ersten Mal seit über 500 Jahren ausgebrochen."
+          },
+          {
+            "image_alt": "Kinder halten eine Sonnenflagge hoch",
+            "headline": "Kinder-NGO 'Future' arbeitet mit HRF zusammen",
+            "description": "HRF ist jetzt Partner der Kinder-NGO 'Future' und wird globale Unterstützung und Bewusstsein aufbauen."
+          }
+        ]
+      },
+      "fr": {
+        "lang": "fr",
+        "dir": "ltr",
+        "metadata": {
+          "country_name": "Suisse"
+        },
+        "hero": {
+          "image_alt": "Des manifestants tenant des pancartes pour les droits de l'homme.",
+          "headline": "Des secousses ressenties à New York alors qu’un séisme de magnitude 3 frappe le New Jersey",
+          "description": "Un habitant de Brooklyn, New York, a décrit cela comme une très brève secousse, juste un léger balancement pendant un instant.",
+          "ctas_buttons": [
+            {
+              "text": "Devenir bénévole"
+            },
+            {
+              "text": "Faire un don"
+            }
+          ]
+        },
+        "stories": [
+          {
+            "image_alt": "Volcan russe",
+            "headline": "Un volcan russe entre en éruption pour la première fois en plus de 500 ans",
+            "description": "Un volcan dans l’extrême est de la Russie est entré en éruption pour la première fois en plus de 500 ans."
+          },
+          {
+            "image_alt": "Des enfants brandissant un drapeau soleil",
+            "headline": "L’ONG pour enfants 'Future' s’associe à HRF",
+            "description": "HRF est désormais partenaire de l’ONG pour enfants 'Future' et visera à renforcer le soutien et la sensibilisation mondiaux."
+          }
+        ]
+      }
+    }
   }
 }

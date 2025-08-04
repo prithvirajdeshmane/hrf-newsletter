@@ -73,7 +73,9 @@ def get_geo_data(data, geo_code):
     return None, None
 
 def generate_newsletter_for_geo_lang(geo, lang):
-    """Generates a newsletter for a specific geo and language."""
+    """Generates a newsletter for a specific geo and language, then uploads it to Mailchimp."""
+    import sys
+    from mailchimp_upload import upload_template_to_mailchimp, MailchimpUploadError
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_path = os.path.join(project_root, 'data', 'newsletter_data.json')
     with open(data_path, 'r', encoding='utf-8') as f:
@@ -84,11 +86,11 @@ def generate_newsletter_for_geo_lang(geo, lang):
     if geo_data == 'EMPTY':
         print(f"\nError: Geo '{geo}' exists in the data, but contains no content or translations.")
         print("Please provide newsletter content for this geo in the JSON file.")
-        return
+        sys.exit(1)
     if not geo_data:
         print(f"\nError: Geo '{geo_code}' could not be resolved.")
         print("Please use a valid geo code with translations.")
-        return
+        sys.exit(1)
 
     context = {**geo_data, 'global': data['global']}
     missing_images = validate_image_paths(context, project_root)
@@ -97,7 +99,7 @@ def generate_newsletter_for_geo_lang(geo, lang):
         for path in missing_images:
             print(f"  - {path}")
         print("\nPlease create the files or correct the paths in newsletter_data.json.")
-        return
+        sys.exit(1)
 
     template_dir = os.path.join(project_root, 'templates')
     env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)
@@ -114,6 +116,45 @@ def generate_newsletter_for_geo_lang(geo, lang):
         f.write(html_content)
     print(f"\nSuccessfully generated newsletter for geo '{resolved_geo}'.")
     print(f"Output saved to: {output_path}")
+
+    # --- Upload images to Mailchimp and rewrite URLs in HTML ---
+    try:
+        from mailchimp_image_upload import upload_image_to_mailchimp, MailchimpImageUploadError
+        image_urls = find_image_urls(context)
+        local_to_mailchimp_url = {}
+        for url in set(image_urls):
+            # Remove leading ./ or ../ for matching
+            clean_url = url.lstrip('./')
+            image_path = os.path.join(project_root, clean_url.replace('/', os.sep))
+            try:
+                mailchimp_url = upload_image_to_mailchimp(image_path)
+            except MailchimpImageUploadError as img_err:
+                print(f"\nERROR: Failed to upload image '{image_path}' to Mailchimp for geo '{resolved_geo}'.")
+                print(f"Reason: {img_err}")
+                print("No further uploads will be attempted. Please resolve the issue and try again.")
+                sys.exit(1)
+            local_to_mailchimp_url[url] = mailchimp_url
+            # Also map cleaned path for robustness
+            local_to_mailchimp_url[clean_url] = mailchimp_url
+        # Replace all image URLs in the HTML with Mailchimp URLs
+        html_for_mailchimp = html_content
+        for local_url, mailchimp_url in local_to_mailchimp_url.items():
+            html_for_mailchimp = html_for_mailchimp.replace(local_url, mailchimp_url)
+    except Exception as e:
+        print(f"\nERROR: Unexpected error during image upload or URL replacement for geo '{resolved_geo}'.")
+        print(f"Reason: {e}")
+        sys.exit(1)
+
+    # --- Upload to Mailchimp synchronously ---
+    template_name = f"newsletter_{resolved_geo}_{timestamp}"
+    try:
+        upload_template_to_mailchimp(html_for_mailchimp, template_name)
+        print(f"Successfully uploaded newsletter '{template_name}' to Mailchimp.")
+    except MailchimpUploadError as e:
+        print(f"\nERROR: Failed to upload newsletter '{template_name}' to Mailchimp for geo '{resolved_geo}'.")
+        print(f"Reason: {e}")
+        print("No further uploads will be attempted. Please resolve the issue and try again.")
+        sys.exit(1)
 
 
 def find_image_urls(data):
