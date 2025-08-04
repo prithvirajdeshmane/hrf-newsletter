@@ -7,8 +7,8 @@ from jinja2 import Environment, FileSystemLoader
 import copy
 import re
 
-# Assuming mailchimp_upload, mailchimp_image_upload, and image_utils are in the same directory
-from mailchimp_upload import upload_template_to_mailchimp, MailchimpUploadError
+# Assuming mailchimp_template_upload, mailchimp_image_upload, and image_utils are in the same directory
+from mailchimp_template_upload import upload_template_to_mailchimp, MailchimpUploadError
 from mailchimp_image_upload import upload_image_to_mailchimp, MailchimpImageUploadError
 from image_utils import compress_image_if_needed
 
