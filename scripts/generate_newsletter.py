@@ -1,16 +1,23 @@
 import os
 import json
-import argparse
 import sys
+import webbrowser
+import threading
 from datetime import datetime
 from jinja2 import Environment, FileSystemLoader
 import copy
 import re
+from flask import Flask, request, jsonify, send_from_directory
+from dotenv import load_dotenv, set_key
 
 # Assuming mailchimp_template_upload, mailchimp_image_upload, and image_utils are in the same directory
 from mailchimp_template_upload import upload_template_to_mailchimp, MailchimpUploadError
 from mailchimp_image_upload import upload_image_to_mailchimp, MailchimpImageUploadError
 from image_utils import compress_image_if_needed
+
+# Initialize Flask app
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'hrf-newsletter-secret-key'
 
 def deep_merge(source, destination):
     """Recursively merges source dict into a copy of destination dict, intelligently merging lists of objects."""
@@ -185,50 +192,174 @@ def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, projec
         print(f"Reason: {e}")
         sys.exit(1)
 
-def main():
-    parser = argparse.ArgumentParser(description='Generate and upload newsletters for a specific geo.')
-    parser.add_argument('geo', help="The geo code (e.g., 'ca', 'us').")
-    args = parser.parse_args()
-    
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    data_path = os.path.join(project_root, 'data', 'newsletter_data.json')
+# Flask Routes
+@app.route('/')
+def index():
+    """Serve the main HTML page."""
+    project_root = get_project_root()
+    return send_from_directory(project_root, 'index.html')
 
+@app.route('/api/countries')
+def get_countries():
+    """Get the list of countries from country_languages.json."""
     try:
-        with open(data_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        print(f"Error: Data file not found at {data_path}")
-        sys.exit(1)
-    except json.JSONDecodeError:
-        print(f"Error: Could not decode JSON from {data_path}")
-        sys.exit(1)
+        project_root = get_project_root()
+        countries_file = os.path.join(project_root, 'data', 'country_languages.json')
+        
+        with open(countries_file, 'r', encoding='utf-8') as f:
+            countries = json.load(f)
+        
+        return jsonify(countries)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    geo_input = args.geo
-    if geo_input not in data:
-        print(f"\nError: Geo '{geo_input}' not found in data file.")
-        sys.exit(1)
-
-    geo_block = data[geo_input]
+@app.route('/api/check-credentials')
+def check_credentials():
+    """Check if Mailchimp credentials are set."""
+    load_dotenv()
+    api_key = os.getenv('MAILCHIMP_API_KEY')
+    server_prefix = os.getenv('MAILCHIMP_SERVER_PREFIX')
     
-    # Determine which languages to generate for this geo
-    if 'translations' in geo_block and isinstance(geo_block['translations'], dict):
-        languages_to_generate = list(geo_block['translations'].keys())
-    else:
-        # If no translations block, assume it's a single-language geo (e.g., 'en')
-        languages_to_generate = ['en']
+    has_credentials = bool(api_key and api_key.strip() and server_prefix and server_prefix.strip())
+    
+    return jsonify({'hasCredentials': has_credentials})
 
-    successful_uploads = []
-    print(f"--- Starting newsletter generation for geo: {geo_input} ---")
-    for lang in languages_to_generate:
-        generate_newsletter_for_geo_lang(geo_input, lang, data, successful_uploads, project_root)
+@app.route('/api/save-credentials', methods=['POST'])
+def save_credentials():
+    """Save Mailchimp credentials to .env file."""
+    try:
+        data = request.get_json()
+        api_key = data.get('apiKey', '').strip()
+        server_prefix = data.get('serverPrefix', '').strip()
+        
+        if not api_key or not server_prefix:
+            return jsonify({'error': 'Both API key and server prefix are required'}), 400
+        
+        project_root = get_project_root()
+        env_file = os.path.join(project_root, '.env')
+        
+        # Create .env file if it doesn't exist
+        if not os.path.exists(env_file):
+            with open(env_file, 'w') as f:
+                f.write('')
+        
+        # Save credentials
+        set_key(env_file, 'MAILCHIMP_API_KEY', api_key)
+        set_key(env_file, 'MAILCHIMP_SERVER_PREFIX', server_prefix)
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    if successful_uploads:
-        print("\n--- Upload Summary ---")
-        for name in successful_uploads:
-            print(f"- {name}")
-        print("\nAll newsletters were generated and uploaded successfully.")
-    else:
-        print("\nNo newsletters were uploaded.")
+@app.route('/api/generate-newsletter', methods=['POST'])
+def generate_newsletter_api():
+    """Generate newsletter for the selected country."""
+    try:
+        data = request.get_json()
+        country = data.get('country')
+        
+        if not country:
+            return jsonify({'error': 'Country is required'}), 400
+        
+        # Load country mappings
+        project_root = get_project_root()
+        countries_file = os.path.join(project_root, 'data', 'country_languages.json')
+        
+        with open(countries_file, 'r', encoding='utf-8') as f:
+            countries_data = json.load(f)
+        
+        if country not in countries_data:
+            return jsonify({'error': f'Country "{country}" not found'}), 400
+        
+        # Map country to geo code (you'll need to implement this mapping)
+        geo_mapping = {
+            'United States': 'us',
+            'Canada': 'ca',
+            'Mexico': 'mx',
+            'Brazil': 'br',
+            'Chile': 'ch',
+            'Argentina': 'ar',
+            'Colombia': 'co',
+            'Peru': 'pe',
+            'Ecuador': 'ec',
+            'Bolivia': 'bo',
+            'Paraguay': 'py',
+            'Uruguay': 'uy',
+            'Venezuela': 've',
+            'Guatemala': 'gt',
+            'Honduras': 'hn',
+            'El Salvador': 'sv',
+            'Nicaragua': 'ni',
+            'Costa Rica': 'cr',
+            'Panama': 'pa',
+            'Dominican Republic': 'do',
+            'Cuba': 'cu',
+            'Haiti': 'ht',
+            'Jamaica': 'jm',
+            'Trinidad and Tobago': 'tt',
+            'Barbados': 'bb',
+            'Bahamas': 'bs',
+            'Belize': 'bz',
+            'Guyana': 'gy',
+            'Suriname': 'sr',
+            'French Guiana': 'gf'
+        }
+        
+        geo = geo_mapping.get(country)
+        if not geo:
+            return jsonify({'error': f'No geo mapping found for country "{country}"'}), 400
+        
+        # Load newsletter data
+        data_file = os.path.join(project_root, 'data', 'newsletter_data.json')
+        with open(data_file, 'r', encoding='utf-8') as f:
+            newsletter_data = json.load(f)
+        
+        if geo not in newsletter_data:
+            return jsonify({'error': f'No newsletter data found for geo "{geo}"'}), 400
+        
+        # Generate newsletters for all languages in the geo
+        successful_uploads = []
+        geo_data = newsletter_data[geo]
+        
+        if 'languages' not in geo_data:
+            return jsonify({'error': f'No languages defined for geo "{geo}"'}), 400
+        
+        for lang in geo_data['languages']:
+            generate_newsletter_for_geo_lang(geo, lang, newsletter_data, successful_uploads, project_root)
+        
+        return jsonify({
+            'success': True,
+            'templates': successful_uploads,
+            'message': f'Successfully generated {len(successful_uploads)} newsletter templates'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def get_project_root():
+    """Get the project root directory."""
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+def open_browser():
+    """Open the web browser after a short delay."""
+    import time
+    time.sleep(1.5)  # Wait for server to start
+    webbrowser.open('http://localhost:5000')
+
+def main():
+    """Main function to start the web server."""
+    print("HRF Newsletter Generator")
+    print("=" * 40)
+    print("Starting web server...")
+    print("Opening browser at http://localhost:5000")
+    print("Press Ctrl+C to stop the server")
+    print("=" * 40)
+    
+    # Open browser in a separate thread
+    threading.Thread(target=open_browser, daemon=True).start()
+    
+    # Start Flask server
+    app.run(host='localhost', port=5000, debug=False)
 
 if __name__ == '__main__':
     main()
