@@ -354,15 +354,15 @@ def build_newsletter_api():
                         'country_name': country
                     },
                     'hero': {
-                        'image_alt': f'Newsletter hero image for {country}',
-                        'headline': f'Newsletter for {country}',
-                        'description': f'Latest news and updates for {country}',
+                        'image_alt': form_data['hero'].get('imageAlt', f'Newsletter hero image for {country}'),
+                        'headline': form_data['hero'].get('headline', f'Newsletter for {country}'),
+                        'description': form_data['hero'].get('description', f'Latest news and updates for {country}'),
                         'ctas_buttons': [{'text': cta['text']} for cta in form_data.get('ctas', [])]
                     },
                     'stories': [{
-                        'image_alt': f'Story {i+1} image',
-                        'headline': f'Story {i+1}',
-                        'description': f'Read more about this important story.'
+                        'image_alt': story.get('imageAlt', f'Story {i+1} image'),
+                        'headline': story.get('headline', f'Story {i+1}'),
+                        'description': story.get('description', 'Read more about this important story.')
                     } for i, story in enumerate(form_data.get('stories', []))]
                 }
         

@@ -268,6 +268,21 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="heroImageAlt">Image alt:</label>
+                    <input type="text" id="heroImageAlt" placeholder="e.g., 'Protesters holding signs for human rights'">
+                </div>
+
+                <div class="form-group">
+                    <label for="heroHeadline">Headline:</label>
+                    <input type="text" id="heroHeadline" placeholder="e.g., 'Breaking: Major Human Rights Victory in Supreme Court'">
+                </div>
+
+                <div class="form-group">
+                    <label for="heroDescription">Description:</label>
+                    <input type="text" id="heroDescription" placeholder="e.g., 'A landmark decision that will impact millions of people worldwide...'">
+                </div>
+
+                <div class="form-group">
                     <label for="learnMoreUrl">Learn more link URL (optional):</label>
                     <input type="text" id="learnMoreUrl" placeholder="https://example.com/article">
                     <div class="error-message" id="learnMoreUrlError"></div>
@@ -433,6 +448,18 @@
                             <div class="error-message" id="storyImage${i}Error"></div>
                         </div>
                         <div class="form-group">
+                            <label for="storyImageAlt${i}">Image alt:</label>
+                            <input type="text" id="storyImageAlt${i}" placeholder="e.g., 'Community members at a peaceful demonstration'">
+                        </div>
+                        <div class="form-group">
+                            <label for="storyHeadline${i}">Headline:</label>
+                            <input type="text" id="storyHeadline${i}" placeholder="e.g., 'Local Community Stands Up for Justice'">
+                        </div>
+                        <div class="form-group">
+                            <label for="storyDescription${i}">Description:</label>
+                            <input type="text" id="storyDescription${i}" placeholder="e.g., 'Residents organize peaceful protest to demand accountability...'">
+                        </div>
+                        <div class="form-group">
                             <label for="storyUrl${i}">Story URL:</label>
                             <input type="text" id="storyUrl${i}" placeholder="https://example.com/story">
                             <div class="error-message" id="storyUrl${i}Error"></div>
@@ -484,6 +511,9 @@
                     languages: selectedLanguages.join(','), // Convert array to comma-separated string
                     hero: {
                         image: heroImage,
+                        imageAlt: document.getElementById('heroImageAlt').value.trim(),
+                        headline: document.getElementById('heroHeadline').value.trim(),
+                        description: document.getElementById('heroDescription').value.trim(),
                         learnMoreUrl: document.getElementById('learnMoreUrl').value.trim()
                     },
                     ctas: [],
@@ -504,9 +534,18 @@
                 const storyCount = parseInt(document.getElementById('storyCount').value);
                 for (let i = 1; i <= storyCount; i++) {
                     const image = document.getElementById(`storyImage${i}`).value.trim();
+                    const imageAlt = document.getElementById(`storyImageAlt${i}`).value.trim();
+                    const headline = document.getElementById(`storyHeadline${i}`).value.trim();
+                    const description = document.getElementById(`storyDescription${i}`).value.trim();
                     const url = document.getElementById(`storyUrl${i}`).value.trim();
                     if (image && url) {
-                        formData.stories.push({ image, url });
+                        formData.stories.push({ 
+                            image, 
+                            imageAlt, 
+                            headline, 
+                            description, 
+                            url 
+                        });
                     }
                 }
                 
