@@ -219,12 +219,7 @@
                 </select>
             </div>
             
-            <div class="form-group" id="languagesGroup" style="display: none;">
-                <label>Languages spoken:</label>
-                <div id="languagesList" class="languages-display"></div>
-            </div>
-            
-            <button type="submit" class="btn" id="generateBtn">Let's build it</button>
+            <button type="submit" class="btn" id="generateBtn">Build Newsletter</button>
             
             <div class="loading" id="loadingDiv">
                 <div class="spinner"></div>
@@ -286,39 +281,6 @@
                 option.textContent = country;
                 select.appendChild(option);
             });
-            
-            // Add event listener for country selection
-            select.addEventListener('change', function() {
-                updateLanguagesDisplay(this.value);
-            });
-        }
-        
-        function updateLanguagesDisplay(selectedCountry) {
-            const languagesGroup = document.getElementById('languagesGroup');
-            const languagesList = document.getElementById('languagesList');
-            
-            if (!selectedCountry || !countries[selectedCountry]) {
-                languagesGroup.style.display = 'none';
-                return;
-            }
-            
-            const countryData = countries[selectedCountry];
-            const languages = countryData.languages || [];
-            
-            if (languages.length === 0) {
-                languagesGroup.style.display = 'none';
-                return;
-            }
-            
-            // Extract language names (first element of each language array)
-            const languageNames = languages.map(lang => lang[0]);
-            
-            // Create language tags
-            languagesList.innerHTML = languageNames.map(lang => 
-                `<span class="language-tag">${lang}</span>`
-            ).join('');
-            
-            languagesGroup.style.display = 'block';
         }
 
         // Check credentials on page load
@@ -367,7 +329,7 @@
             }
         });
 
-        // Handle newsletter generation
+        // Handle newsletter building
         document.getElementById('newsletterForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -377,36 +339,12 @@
                 return;
             }
             
-            // Show loading state
-            document.getElementById('generateBtn').disabled = true;
-            document.getElementById('loadingDiv').style.display = 'block';
+            // Navigate to build-newsletter page with only country parameter
+            const params = new URLSearchParams({
+                country: selectedCountry
+            });
             
-            try {
-                const response = await fetch('/api/generate-newsletter', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        country: selectedCountry
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    alert(`Newsletter generated successfully!\n\nGenerated templates:\n${result.templates.join('\n')}`);
-                } else {
-                    alert(`Error generating newsletter: ${result.error}`);
-                }
-            } catch (error) {
-                console.error('Error generating newsletter:', error);
-                alert('Error generating newsletter. Please try again.');
-            } finally {
-                // Hide loading state
-                document.getElementById('generateBtn').disabled = false;
-                document.getElementById('loadingDiv').style.display = 'none';
-            }
+            window.location.href = `/build-newsletter?${params.toString()}`;
         });
 
         // Initialize the application

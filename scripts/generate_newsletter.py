@@ -37,16 +37,16 @@ def deep_merge(source, destination):
 
 
 def find_all_images_to_upload(geo, project_root):
-    """Finds all image files in images/global and images/{geo} folders that need to be uploaded."""
+    """Finds all image files in images/brand and images/{geo} folders that need to be uploaded."""
     image_files = []
     
-    # Find all images in global folder
-    global_images_dir = os.path.join(project_root, 'images', 'global')
-    if os.path.exists(global_images_dir):
-        for filename in os.listdir(global_images_dir):
+    # Find all images in brand folder
+    brand_images_dir = os.path.join(project_root, 'images', 'brand')
+    if os.path.exists(brand_images_dir):
+        for filename in os.listdir(brand_images_dir):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
-                relative_path = f"images/global/{filename}"
-                full_path = os.path.join(global_images_dir, filename)
+                relative_path = f"images/brand/{filename}"
+                full_path = os.path.join(brand_images_dir, filename)
                 image_files.append((relative_path, full_path))
     
     # Find all images in geo-specific folder
@@ -72,9 +72,9 @@ def validate_image_folders(geo, project_root):
     """Validates that the required image folders exist."""
     missing_folders = []
     
-    global_folder = os.path.join(project_root, 'images', 'global')
-    if not os.path.exists(global_folder):
-        missing_folders.append('images/global')
+    brand_folder = os.path.join(project_root, 'images', 'brand')
+    if not os.path.exists(brand_folder):
+        missing_folders.append('images/brand')
     
     geo_folder = os.path.join(project_root, 'images', geo)
     if not os.path.exists(geo_folder):
@@ -136,7 +136,7 @@ def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, projec
     try:
         # Find all images that need to be uploaded
         images_to_upload = find_all_images_to_upload(geo, project_root)
-        print(f"Found {len(images_to_upload)} images to upload from global and {geo} folders")
+        print(f"Found {len(images_to_upload)} images to upload from brand and {geo} folders")
         
         local_to_mailchimp_url = {}
         
@@ -158,9 +158,9 @@ def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, projec
         for relative_path, mailchimp_url in url_mappings.items():
             # Generate all possible URL variants for this image
             variants = [
-                f"./{relative_path}",  # ./images/global/HRF-Logo.png
-                f"/{relative_path}",   # /images/global/HRF-Logo.png  
-                relative_path,         # images/global/HRF-Logo.png
+                f"./{relative_path}",  # ./images/brand/HRF-Logo.png
+                f"/{relative_path}",   # /images/brand/HRF-Logo.png  
+                relative_path,         # images/brand/HRF-Logo.png
             ]
             for variant in variants:
                 all_possible_urls.append((variant, mailchimp_url))
@@ -198,6 +198,12 @@ def index():
     """Serve the main HTML page."""
     project_root = get_project_root()
     return send_from_directory(project_root, 'index.html')
+
+@app.route('/build-newsletter')
+def build_newsletter():
+    """Serve the build newsletter page."""
+    project_root = get_project_root()
+    return send_from_directory(project_root, 'build-newsletter.html')
 
 @app.route('/api/countries')
 def get_countries():
@@ -251,9 +257,133 @@ def save_credentials():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/build-newsletter', methods=['POST'])
+def build_newsletter_api():
+    """Generate newsletter with custom content from the build form."""
+    try:
+        form_data = request.get_json()
+        country = form_data.get('country')
+        
+        if not country:
+            return jsonify({'error': 'Country is required'}), 400
+        
+        # Map country to geo code
+        geo_mapping = {
+            'United States': 'us',
+            'Canada': 'ca',
+            'Mexico': 'mx',
+            'Brazil': 'br',
+            'Chile': 'ch',
+            'Argentina': 'ar',
+            'Colombia': 'co',
+            'Peru': 'pe',
+            'Ecuador': 'ec',
+            'Bolivia': 'bo',
+            'Paraguay': 'py',
+            'Uruguay': 'uy',
+            'Venezuela': 've',
+            'Guatemala': 'gt',
+            'Honduras': 'hn',
+            'El Salvador': 'sv',
+            'Nicaragua': 'ni',
+            'Costa Rica': 'cr',
+            'Panama': 'pa',
+            'Dominican Republic': 'do',
+            'Cuba': 'cu',
+            'Haiti': 'ht',
+            'Jamaica': 'jm',
+            'Trinidad and Tobago': 'tt',
+            'Barbados': 'bb',
+            'Bahamas': 'bs',
+            'Belize': 'bz',
+            'Guyana': 'gy',
+            'Suriname': 'sr',
+            'French Guiana': 'gf'
+        }
+        
+        geo = geo_mapping.get(country)
+        if not geo:
+            return jsonify({'error': f'No geo mapping found for country "{country}"'}), 400
+        
+        # Create custom newsletter data from form input
+        project_root = get_project_root()
+        
+        # Load base newsletter data structure
+        data_file = os.path.join(project_root, 'data', 'newsletter_data.json')
+        with open(data_file, 'r', encoding='utf-8') as f:
+            base_data = json.load(f)
+        
+        # Create custom newsletter data with form inputs
+        custom_data = {
+            'global': base_data.get('global', {}),
+            geo: {
+                'hero': {
+                    'image_url': form_data['hero']['image'],
+                    'cta_learn_more_url': form_data['hero'].get('learnMoreUrl', ''),
+                    'ctas_buttons': [{'url': cta['url']} for cta in form_data.get('ctas', [])]
+                },
+                'stories': [{
+                    'image_url': story['image'],
+                    'url': story['url']
+                } for story in form_data.get('stories', [])],
+                'translations': {},
+                'languages': []
+            }
+        }
+        
+        # Get languages from country_languages.json
+        countries_file = os.path.join(project_root, 'data', 'country_languages.json')
+        with open(countries_file, 'r', encoding='utf-8') as f:
+            countries_data = json.load(f)
+        
+        if country in countries_data:
+            languages = countries_data[country].get('languages', [])
+            
+            for lang_info in languages:
+                lang_code = lang_info[1]  # Get language code (e.g., 'en', 'fr')
+                lang_name = lang_info[0]  # Get language name (e.g., 'English', 'French')
+                
+                # Add language to the list
+                custom_data[geo]['languages'].append(lang_code)
+                
+                # Create translation data with form inputs
+                custom_data[geo]['translations'][lang_code] = {
+                    'lang': lang_code,
+                    'dir': 'ltr',
+                    'metadata': {
+                        'country_name': country
+                    },
+                    'hero': {
+                        'image_alt': f'Newsletter hero image for {country}',
+                        'headline': f'Newsletter for {country}',
+                        'description': f'Latest news and updates for {country}',
+                        'ctas_buttons': [{'text': cta['text']} for cta in form_data.get('ctas', [])]
+                    },
+                    'stories': [{
+                        'image_alt': f'Story {i+1} image',
+                        'headline': f'Story {i+1}',
+                        'description': f'Read more about this important story.'
+                    } for i, story in enumerate(form_data.get('stories', []))]
+                }
+        
+        # Generate newsletters for all languages
+        successful_uploads = []
+        
+        for lang in custom_data[geo]['languages']:
+            generate_newsletter_for_geo_lang(geo, lang, custom_data, successful_uploads, project_root)
+        
+        return jsonify({
+            'success': True,
+            'templates': successful_uploads,
+            'message': f'Successfully generated {len(successful_uploads)} newsletter templates'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/generate-newsletter', methods=['POST'])
 def generate_newsletter_api():
-    """Generate newsletter for the selected country."""
+    """Generate newsletter for the selected country using existing data."""
     try:
         data = request.get_json()
         country = data.get('country')
@@ -271,7 +401,7 @@ def generate_newsletter_api():
         if country not in countries_data:
             return jsonify({'error': f'Country "{country}" not found'}), 400
         
-        # Map country to geo code (you'll need to implement this mapping)
+        # Map country to geo code
         geo_mapping = {
             'United States': 'us',
             'Canada': 'ca',
