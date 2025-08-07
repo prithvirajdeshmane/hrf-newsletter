@@ -60,5 +60,20 @@
         "preferredName": "République Centrafricaine"
       }
     }
+  },
+  "Bahrain": {
+    "countryCode": "BH",
+    "languages": {
+      "English": {
+        "languageCode": "en",
+        "locale": "en-BH"
+      },
+      "Arabic": {
+        "languageCode": "ar",
+        "locale": "ar-BH",
+        "preferredName": "البحرين",
+        "scriptDirection": "rtl"
+      }
+    }
   }
 }

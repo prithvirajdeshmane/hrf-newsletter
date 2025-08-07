@@ -14,6 +14,12 @@ import shutil
 from urllib.parse import urlparse
 import requests
 
+# Set UTF-8 encoding for console output on Windows
+if sys.platform.startswith('win'):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 # Assuming mailchimp_template_upload, mailchimp_image_upload, and image_utils are in the same directory
 from mailchimp_template_upload import upload_template_to_mailchimp, MailchimpUploadError
 from mailchimp_image_upload import upload_image_to_mailchimp, MailchimpImageUploadError
@@ -340,102 +346,150 @@ def get_newsletter_context(data, geo, lang):
     return final_data, f"{geo}-{lang}"
 
 def generate_newsletter_for_geo_lang(country_code, lang, data, successful_uploads, project_root, user_images=None, form_data=None, locale=None, folder_name=None, content_country_name=None):
-    """Generates a newsletter for a specific country_code and language with translation, local saving, and Mailchimp upload."""
-    print(f"\n=== Generating newsletter for {country_code}-{lang} (locale: {locale}) ===")
-    
-    # Build context from form_data if provided
-    if form_data:
-        print(f"Building context from form data...")
+    try:
+        print(f"Generating newsletter for {country_code} in {lang}")
         
-        # Use the passed content_country_name for newsletter content, fallback to country_code
+        # Get language-specific information
+        country_data = data.get(content_country_name or country_code, {})
+        languages = country_data.get('languages', {})
+        language_info = None
+        
+        # Find the language info by matching language code
+        for lang_name, lang_data in languages.items():
+            if lang_data.get('languageCode') == lang:
+                language_info = lang_data
+                break
+        
+        if not language_info:
+            print(f"Warning: Language info not found for {lang} in {country_code}")
+            language_info = {}
+        
+        # Get script direction (default to ltr)
+        script_direction = language_info.get('scriptDirection', 'ltr')
+        print(f"Script direction for {lang}: {script_direction}")
+        
+        # Determine display names
         display_country_name = content_country_name if content_country_name else country_code
-        
-        # Use the passed folder_name for file organization, fallback to country_code
         file_folder_name = folder_name if folder_name else country_code
         
-        context = {
-            'global': data['global'],
-            'metadata': {
-                'country_name': display_country_name
-            },
-            'hero': {
-                'image_url': form_data['hero']['image'],
-                'image_alt': form_data['hero'].get('imageAlt', ''),
-                'headline': form_data['hero'].get('headline', ''),
-                'description': form_data['hero'].get('description', ''),
-                'cta_learn_more_url': form_data['hero'].get('learnMoreUrl', ''),
-                'ctas_buttons': [{'text': cta['text'], 'url': cta['url']} for cta in form_data.get('ctas', [])]
-            },
-            'stories': [{
-                'image_url': story['image'],
-                'image_alt': story.get('imageAlt', ''),
-                'headline': story.get('headline', ''),
-                'description': story.get('description', ''),
-                'url': story['url']
-            } for story in form_data.get('stories', [])]
-        }
-    else:
-        # Fallback to old method
-        context, resolved_geo = get_newsletter_context(data, country_code, lang)
-        if not context:
-            print(f"Error: Could not build context for geo '{country_code}-{lang}'. Skipping.")
-            return
-
-    # --- Apply translations if needed ---
-    if form_data and lang != 'en':
-        print(f"Translating content to {lang}...")
+        # Get preferred country name for this language if available
+        preferred_country_name = language_info.get('preferredName', display_country_name)
         
-        # Translate hero content
-        if 'hero' in context:
-            if context['hero'].get('image_alt'):
-                context['hero']['image_alt'] = translate_text(context['hero']['image_alt'], lang)
-            if context['hero'].get('headline'):
-                context['hero']['headline'] = translate_text(context['hero']['headline'], lang)
-            if context['hero'].get('description'):
-                context['hero']['description'] = translate_text(context['hero']['description'], lang)
+        # Safe Unicode printing for Windows console
+        try:
+            print(f"Using preferred country name: {preferred_country_name}")
+        except UnicodeEncodeError:
+            print(f"Using preferred country name: [Unicode text - {len(preferred_country_name)} chars]")
+        print(f"Using folder name: {file_folder_name}")
+        
+        # Build context from form_data if provided
+        if form_data:
+            print(f"Building context from form data...")
             
-            # Translate CTA buttons
-            if 'ctas_buttons' in context['hero']:
-                for cta in context['hero']['ctas_buttons']:
-                    if cta.get('text'):
-                        cta['text'] = translate_text(cta['text'], lang)
+            # Use the passed content_country_name for newsletter content, fallback to country_code
+            display_country_name = content_country_name if content_country_name else country_code
+            
+            # Use the passed folder_name for file organization, fallback to country_code
+            file_folder_name = folder_name if folder_name else country_code
+            
+            context = {
+                'global': data['global'],
+                'metadata': {
+                    'country_name': preferred_country_name
+                },
+                'dir': script_direction,  # Use 'dir' to match HTML template expectation
+                'lang': lang,  # Add language code for template
+                'hero': {
+                    'image_url': form_data['hero']['image'],
+                    'image_alt': form_data['hero'].get('imageAlt', ''),
+                    'headline': form_data['hero'].get('headline', ''),
+                    'description': form_data['hero'].get('description', ''),
+                    'cta_learn_more_url': form_data['hero'].get('learnMoreUrl', ''),
+                    'ctas_buttons': [{'text': cta['text'], 'url': cta['url']} for cta in form_data.get('ctas', [])]
+                },
+                'stories': [{
+                    'image_url': story['image'],
+                    'image_alt': story.get('imageAlt', ''),
+                    'headline': story.get('headline', ''),
+                    'description': story.get('description', ''),
+                    'url': story['url']
+                } for story in form_data.get('stories', [])]
+            }
+        else:
+            # Fallback to old method
+            context, resolved_geo = get_newsletter_context(data, country_code, lang)
+            if not context:
+                print(f"Error: Could not build context for geo '{country_code}-{lang}'. Skipping.")
+                return
+            
+            # Add script direction and language to context for old method too
+            context['dir'] = script_direction
+            context['lang'] = lang
         
-        # Translate stories content
-        if 'stories' in context:
-            for story in context['stories']:
-                if story.get('image_alt'):
-                    story['image_alt'] = translate_text(story['image_alt'], lang)
-                if story.get('headline'):
-                    story['headline'] = translate_text(story['headline'], lang)
-                if story.get('description'):
-                    story['description'] = translate_text(story['description'], lang)
+        # --- Apply translations if needed ---
+        if form_data and lang != 'en':
+            print(f"Translating content to {lang}...")
+            
+            # Translate hero content
+            if 'hero' in context:
+                if context['hero'].get('image_alt'):
+                    context['hero']['image_alt'] = translate_text(context['hero']['image_alt'], lang)
+                if context['hero'].get('headline'):
+                    context['hero']['headline'] = translate_text(context['hero']['headline'], lang)
+                if context['hero'].get('description'):
+                    context['hero']['description'] = translate_text(context['hero']['description'], lang)
+                
+                # Translate CTA buttons
+                if 'ctas_buttons' in context['hero']:
+                    for cta in context['hero']['ctas_buttons']:
+                        if cta.get('text'):
+                            cta['text'] = translate_text(cta['text'], lang)
+            
+            # Translate stories content
+            if 'stories' in context:
+                for story in context['stories']:
+                    if story.get('image_alt'):
+                        story['image_alt'] = translate_text(story['image_alt'], lang)
+                    if story.get('headline'):
+                        story['headline'] = translate_text(story['headline'], lang)
+                    if story.get('description'):
+                        story['description'] = translate_text(story['description'], lang)
 
-    # --- Validate brand folder exists ---
-    if not validate_brand_folder(project_root):
-        print(f"Warning: images/brand folder not found")
-        # Continue with processing - user images may still be available
+        # --- Validate brand folder exists ---
+        if not validate_brand_folder(project_root):
+            print(f"Warning: images/brand folder not found")
+            # Continue with processing - user images may still be available
 
-    # --- Render HTML template ---
-    template_loader = FileSystemLoader(searchpath=os.path.join(project_root, 'templates'))
-    env = Environment(loader=template_loader)
-    template = env.get_template('newsletter_template.html')
-    html_content = template.render(context)
+        # --- Render HTML template ---
+        template_loader = FileSystemLoader(searchpath=os.path.join(project_root, 'templates'))
+        env = Environment(loader=template_loader)
+        template = env.get_template('newsletter_template.html')
+        html_content = template.render(context)
 
-    # --- Collect all images (brand + user-provided) ---
-    all_images = find_all_images_to_upload(project_root, user_images)
-    print(f"Found {len(all_images)} total images for processing")
-    
-    # --- Save local copy with images ---
-    print("Saving local newsletter...")
-    local_filename = save_local_newsletter(html_content, country_code, lang, project_root, all_images, locale, file_folder_name)
-    
-    # --- MAILCHIMP INTEGRATION TEMPORARILY DISABLED FOR DEBUGGING ---
-    print("\n*** MAILCHIMP INTEGRATION DISABLED - LOCAL ONLY MODE ***")
-    print(f"Local newsletter generation completed for {country_code}-{lang}")
-    print(f"Images processed: {len(all_images) if all_images else 0}")
-    
-    # Return only local filename for now
-    return {'local': local_filename, 'mailchimp': None}
+        # --- Collect all images (brand + user-provided) ---
+        all_images = find_all_images_to_upload(project_root, user_images)
+        print(f"Found {len(all_images)} total images for processing")
+        
+        # --- Save local copy with images ---
+        print("Saving local newsletter...")
+        local_filename = save_local_newsletter(html_content, country_code, lang, project_root, all_images, locale, file_folder_name)
+        
+        # --- MAILCHIMP INTEGRATION TEMPORARILY DISABLED FOR DEBUGGING ---
+        print("\n*** MAILCHIMP INTEGRATION DISABLED - LOCAL ONLY MODE ***")
+        print(f"Local newsletter generation completed for {country_code}-{lang}")
+        print(f"Images processed: {len(all_images) if all_images else 0}")
+        
+        # Return only local filename for now
+        return {'local': local_filename, 'mailchimp': None}
+
+    except Exception as e:
+        print(f"\n=== EXCEPTION IN generate_newsletter_for_geo_lang ===")
+        print(f"Error in generate_newsletter_for_geo_lang: {e}")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Traceback: {traceback.format_exc()}")
+        print(f"=== END EXCEPTION ===")
+        sys.stdout.flush()
+        return None
 
 # Flask Routes
 @app.route('/')
