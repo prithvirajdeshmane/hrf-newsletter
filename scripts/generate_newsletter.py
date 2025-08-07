@@ -45,14 +45,19 @@ def translate_text(text, target_language, source_language='en'):
 def download_image_from_url(url, local_path):
     """Download an image from URL to local path."""
     try:
-        response = requests.get(url, stream=True)
+        print(f"Downloading image from: {url}")
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
         
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
         
         with open(local_path, 'wb') as f:
-            shutil.copyfileobj(response.raw, f)
+            f.write(response.content)
         
+        print(f"Successfully downloaded image to: {local_path}")
         return True
     except Exception as e:
         print(f"Error downloading image from {url}: {e}")
@@ -64,35 +69,96 @@ def collect_user_images(form_data, project_root, geo):
     temp_dir = os.path.join(project_root, 'temp_images')
     os.makedirs(temp_dir, exist_ok=True)
     
+    print(f"Collecting user images for geo: {geo}")
+    
     # Process hero image
     hero_image = form_data.get('hero', {}).get('image', '')
+    print(f"Hero image URL: {hero_image}")
     if hero_image:
         if hero_image.startswith('http'):
-            # Download from URL
-            filename = f"hero_{geo}.jpg"
+            # Determine file extension from URL or default to jpg
+            try:
+                parsed_url = urlparse(hero_image)
+                path = parsed_url.path
+                if '.' in path:
+                    ext = path.split('.')[-1].lower()
+                    if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
+                        filename = f"hero_{geo}.{ext}"
+                    else:
+                        filename = f"hero_{geo}.jpg"
+                else:
+                    filename = f"hero_{geo}.jpg"
+            except:
+                filename = f"hero_{geo}.jpg"
+            
             local_path = os.path.join(temp_dir, filename)
             if download_image_from_url(hero_image, local_path):
                 user_images.append((f"temp_images/{filename}", local_path))
-        else:
-            # Assume it's a local file path or base64 data
-            # For now, we'll handle URL case primarily
-            pass
+                print(f"Successfully collected hero image: {filename}")
+            else:
+                print(f"Failed to download hero image from: {hero_image}")
     
     # Process story images
     for i, story in enumerate(form_data.get('stories', [])):
         story_image = story.get('image', '')
+        print(f"Story {i+1} image URL: {story_image}")
         if story_image and story_image.startswith('http'):
-            filename = f"story{i+1}_{geo}.jpg"
+            # Determine file extension from URL or default to jpg
+            try:
+                parsed_url = urlparse(story_image)
+                path = parsed_url.path
+                if '.' in path:
+                    ext = path.split('.')[-1].lower()
+                    if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
+                        filename = f"story{i+1}_{geo}.{ext}"
+                    else:
+                        filename = f"story{i+1}_{geo}.jpg"
+                else:
+                    filename = f"story{i+1}_{geo}.jpg"
+            except:
+                filename = f"story{i+1}_{geo}.jpg"
+            
             local_path = os.path.join(temp_dir, filename)
             if download_image_from_url(story_image, local_path):
                 user_images.append((f"temp_images/{filename}", local_path))
+                print(f"Successfully collected story {i+1} image: {filename}")
+            else:
+                print(f"Failed to download story {i+1} image from: {story_image}")
     
+    print(f"Total user images collected: {len(user_images)}")
     return user_images
 
-def save_local_newsletter(html_content, geo, lang, project_root):
-    """Save newsletter HTML to local generated_newsletters folder."""
+def copy_images_for_local_newsletter(all_images, project_root):
+    """Copy all images to the generated_newsletters folder for local viewing."""
+    output_dir = os.path.join(project_root, 'generated_newsletters')
+    copied_images = {}
+    
+    for relative_path, full_path in all_images:
+        if os.path.exists(full_path):
+            # Create destination path in generated_newsletters
+            dest_path = os.path.join(output_dir, relative_path)
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            
+            try:
+                shutil.copy2(full_path, dest_path)
+                copied_images[relative_path] = dest_path
+                print(f"Copied image: {relative_path}")
+            except Exception as e:
+                print(f"Error copying image {relative_path}: {e}")
+        else:
+            print(f"Warning: Image not found: {full_path}")
+    
+    return copied_images
+
+def save_local_newsletter(html_content, geo, lang, project_root, all_images=None):
+    """Save newsletter HTML to local generated_newsletters folder with images."""
     output_dir = os.path.join(project_root, 'generated_newsletters')
     os.makedirs(output_dir, exist_ok=True)
+    
+    # Copy images to local folder
+    if all_images:
+        print("Copying images for local newsletter...")
+        copy_images_for_local_newsletter(all_images, project_root)
     
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f"newsletter_{geo}_{lang}_{timestamp}.html"
@@ -238,16 +304,17 @@ def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, projec
     template = env.get_template('newsletter_template.html')
     html_content = template.render(context)
 
-    # --- Save local copy ---
+    # --- Collect all images (brand + user-provided) ---
+    all_images = find_all_images_to_upload(project_root, user_images)
+    print(f"Found {len(all_images)} total images for processing")
+    
+    # --- Save local copy with images ---
     print("Saving local newsletter...")
-    local_filename = save_local_newsletter(html_content, geo, lang, project_root)
+    local_filename = save_local_newsletter(html_content, geo, lang, project_root, all_images)
     
     # --- Prepare for Mailchimp upload ---
     html_for_mailchimp = html_content
     try:
-        # Collect all images (brand + user-provided)
-        all_images = find_all_images_to_upload(project_root, user_images)
-        print(f"Found {len(all_images)} total images to upload")
         
         if all_images:
             # Upload all images and build URL mapping
