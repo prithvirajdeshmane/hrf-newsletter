@@ -337,8 +337,9 @@
                 const countries = await response.json();
                 
                 if (selectedCountry && countries[selectedCountry]) {
-                    const languages = countries[selectedCountry].languages || [];
-                    selectedLanguages = languages.map(lang => lang[0]); // Extract language names
+                    const languagesDict = countries[selectedCountry].languages || {};
+                    // Extract language names from the new dictionary structure
+                    selectedLanguages = Object.keys(languagesDict);
                     
                     const languagesHtml = selectedLanguages.map(lang => 
                         `<span class="language-tag">${lang}</span>`

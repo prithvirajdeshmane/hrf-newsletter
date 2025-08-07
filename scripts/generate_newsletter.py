@@ -113,13 +113,13 @@ def download_image_from_url(url, local_path):
         print(f"Error downloading image from {url}: {e}")
         return False
 
-def collect_user_images(form_data, project_root, geo):
+def collect_user_images(form_data, project_root, country_code):
     """Collect and process user-provided images from form data."""
     user_images = []
     temp_dir = os.path.join(project_root, 'temp_images')
     os.makedirs(temp_dir, exist_ok=True)
     
-    print(f"Collecting user images for geo: {geo}")
+    print(f"Collecting user images for country: {country_code}")
     
     # Process hero image
     hero_image = form_data.get('hero', {}).get('image', '')
@@ -127,7 +127,7 @@ def collect_user_images(form_data, project_root, geo):
     if hero_image:
         if hero_image.startswith('data:'):
             # Handle base64 data URL
-            filename = f"hero_{geo}.jpg"  # Default to jpg for base64
+            filename = f"hero_{country_code}.jpg"  # Default to jpg for base64
             local_path = os.path.join(temp_dir, filename)
             if save_base64_image(hero_image, local_path):
                 user_images.append((f"temp_images/{filename}", local_path))
@@ -142,13 +142,13 @@ def collect_user_images(form_data, project_root, geo):
                 if '.' in path:
                     ext = path.split('.')[-1].lower()
                     if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
-                        filename = f"hero_{geo}.{ext}"
+                        filename = f"hero_{country_code}.{ext}"
                     else:
-                        filename = f"hero_{geo}.jpg"
+                        filename = f"hero_{country_code}.jpg"
                 else:
-                    filename = f"hero_{geo}.jpg"
+                    filename = f"hero_{country_code}.jpg"
             except:
-                filename = f"hero_{geo}.jpg"
+                filename = f"hero_{country_code}.jpg"
             
             local_path = os.path.join(temp_dir, filename)
             if download_image_from_url(hero_image, local_path):
@@ -166,7 +166,7 @@ def collect_user_images(form_data, project_root, geo):
         if story_image:
             if story_image.startswith('data:'):
                 # Handle base64 data URL
-                filename = f"story{i+1}_{geo}.jpg"  # Default to jpg for base64
+                filename = f"story{i+1}_{country_code}.jpg"  # Default to jpg for base64
                 local_path = os.path.join(temp_dir, filename)
                 if save_base64_image(story_image, local_path):
                     user_images.append((f"temp_images/{filename}", local_path))
@@ -181,13 +181,13 @@ def collect_user_images(form_data, project_root, geo):
                     if '.' in path:
                         ext = path.split('.')[-1].lower()
                         if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
-                            filename = f"story{i+1}_{geo}.{ext}"
+                            filename = f"story{i+1}_{country_code}.{ext}"
                         else:
-                            filename = f"story{i+1}_{geo}.jpg"
+                            filename = f"story{i+1}_{country_code}.jpg"
                     else:
-                        filename = f"story{i+1}_{geo}.jpg"
+                        filename = f"story{i+1}_{country_code}.jpg"
                 except:
-                    filename = f"story{i+1}_{geo}.jpg"
+                    filename = f"story{i+1}_{country_code}.jpg"
                 
                 local_path = os.path.join(temp_dir, filename)
                 if download_image_from_url(story_image, local_path):
@@ -201,22 +201,22 @@ def collect_user_images(form_data, project_root, geo):
     print(f"Total user images collected: {len(user_images)}")
     return user_images
 
-def copy_images_for_local_newsletter(all_images, project_root, geo):
-    """Copy all images to the generated_newsletters/{geo} folder for local viewing."""
-    # Copy images to geo-specific folder
-    geo_output_dir = os.path.join(project_root, 'generated_newsletters', geo)
+def copy_images_for_local_newsletter(all_images, project_root, folder_name):
+    """Copy all images to the generated_newsletters/{folder_name} folder for local viewing."""
+    # Copy images to country-specific folder
+    country_output_dir = os.path.join(project_root, 'generated_newsletters', folder_name)
     copied_images = {}
     
     for relative_path, full_path in all_images:
         if os.path.exists(full_path):
-            # Create destination path in generated_newsletters/{geo}
-            dest_path = os.path.join(geo_output_dir, relative_path)
+            # Create destination path in generated_newsletters/{country_code}
+            dest_path = os.path.join(country_output_dir, relative_path)
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
             
             try:
                 shutil.copy2(full_path, dest_path)
                 copied_images[relative_path] = dest_path
-                print(f"Copied image to {geo}: {relative_path}")
+                print(f"Copied image to {folder_name}: {relative_path}")
             except Exception as e:
                 print(f"Error copying image {relative_path}: {e}")
         else:
@@ -224,30 +224,36 @@ def copy_images_for_local_newsletter(all_images, project_root, geo):
     
     return copied_images
 
-def save_local_newsletter(html_content, geo, lang, project_root, all_images=None):
-    """Save newsletter HTML to local generated_newsletters/{geo} folder with images."""
-    # Create geo-specific folder: /generated_newsletters/{geo}/
-    geo_output_dir = os.path.join(project_root, 'generated_newsletters', geo)
-    os.makedirs(geo_output_dir, exist_ok=True)
-    print(f"Ensuring geo folder exists: {geo_output_dir}")
+def save_local_newsletter(html_content, country_code, lang, project_root, all_images=None, locale=None, country_name=None):
+    """Save newsletter HTML to local generated_newsletters/{country_name} folder with images."""
+    # Use country name with underscores for folder, fallback to country_code if not provided
+    folder_name = country_name.replace(' ', '_') if country_name else country_code
+    
+    # Create country-specific folder: /generated_newsletters/{COUNTRY_NAME}/ (with underscores)
+    country_output_dir = os.path.join(project_root, 'generated_newsletters', folder_name)
+    os.makedirs(country_output_dir, exist_ok=True)
+    print(f"Ensuring country folder exists: {country_output_dir}")
     
     # Copy images to local folder
     if all_images:
         print("Copying images for local newsletter...")
-        copy_images_for_local_newsletter(all_images, project_root, geo)
+        copy_images_for_local_newsletter(all_images, project_root, folder_name)
     
-    # Format: newsletter_{geo}-{lang}_{date}_{time}.html (e.g., newsletter_ca-en_080625_221315.html)
+    # New format: newsletter_{locale}_{mmddyy}_{hhmmss}.html (e.g., newsletter_en-CF_080725_111725.html)
     now = datetime.now()
     date_str = now.strftime('%m%d%y')  # MMDDYY format
     time_str = now.strftime('%H%M%S')  # HHMMSS format
-    filename = f"newsletter_{geo}-{lang}_{date_str}_{time_str}.html"
-    filepath = os.path.join(geo_output_dir, filename)
+    
+    # Use locale if provided, otherwise fallback to country_code-lang
+    file_identifier = locale if locale else f"{country_code}-{lang}"
+    filename = f"newsletter_{file_identifier}_{date_str}_{time_str}.html"
+    filepath = os.path.join(country_output_dir, filename)
     
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        print(f"Local newsletter saved: {geo}/{filename}")
-        return f"{geo}/{filename}"
+        print(f"Local newsletter saved: {folder_name}/{filename}")
+        return f"{folder_name}/{filename}"
     except Exception as e:
         print(f"Error saving local newsletter: {e}")
         return None
@@ -333,31 +339,24 @@ def get_newsletter_context(data, geo, lang):
 
     return final_data, f"{geo}-{lang}"
 
-def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, project_root, user_images=None, form_data=None):
-    """Generates a newsletter for a specific geo and language with translation, local saving, and Mailchimp upload."""
-    print(f"\n=== Generating newsletter for {geo}-{lang} ===")
+def generate_newsletter_for_geo_lang(country_code, lang, data, successful_uploads, project_root, user_images=None, form_data=None, locale=None, folder_name=None, content_country_name=None):
+    """Generates a newsletter for a specific country_code and language with translation, local saving, and Mailchimp upload."""
+    print(f"\n=== Generating newsletter for {country_code}-{lang} (locale: {locale}) ===")
     
     # Build context from form_data if provided
     if form_data:
         print(f"Building context from form data...")
         
-        # Find the country name for metadata
-        country_name = None
-        for country, country_data in data.items():
-            if country != 'global' and country_data.get('languages'):
-                # Find the country that matches our geo
-                geo_mapping = {
-                    'us': 'United States', 'ca': 'Canada', 'mx': 'Mexico', 'br': 'Brazil',
-                    'ch': 'Chile', 'ar': 'Argentina', 'co': 'Colombia', 'pe': 'Peru'
-                }
-                if geo_mapping.get(geo) == country:
-                    country_name = country
-                    break
+        # Use the passed content_country_name for newsletter content, fallback to country_code
+        display_country_name = content_country_name if content_country_name else country_code
+        
+        # Use the passed folder_name for file organization, fallback to country_code
+        file_folder_name = folder_name if folder_name else country_code
         
         context = {
             'global': data['global'],
             'metadata': {
-                'country_name': country_name or geo.upper()
+                'country_name': display_country_name
             },
             'hero': {
                 'image_url': form_data['hero']['image'],
@@ -377,9 +376,9 @@ def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, projec
         }
     else:
         # Fallback to old method
-        context, resolved_geo = get_newsletter_context(data, geo, lang)
+        context, resolved_geo = get_newsletter_context(data, country_code, lang)
         if not context:
-            print(f"Error: Could not build context for geo '{geo}-{lang}'. Skipping.")
+            print(f"Error: Could not build context for geo '{country_code}-{lang}'. Skipping.")
             return
 
     # --- Apply translations if needed ---
@@ -428,11 +427,11 @@ def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, projec
     
     # --- Save local copy with images ---
     print("Saving local newsletter...")
-    local_filename = save_local_newsletter(html_content, geo, lang, project_root, all_images)
+    local_filename = save_local_newsletter(html_content, country_code, lang, project_root, all_images, locale, file_folder_name)
     
     # --- MAILCHIMP INTEGRATION TEMPORARILY DISABLED FOR DEBUGGING ---
     print("\n*** MAILCHIMP INTEGRATION DISABLED - LOCAL ONLY MODE ***")
-    print(f"Local newsletter generation completed for {geo}-{lang}")
+    print(f"Local newsletter generation completed for {country_code}-{lang}")
     print(f"Images processed: {len(all_images) if all_images else 0}")
     
     # Return only local filename for now
@@ -540,53 +539,23 @@ def build_newsletter_api():
         print(f"Processing country: {country}")
         sys.stdout.flush()
         
-        # Map country to geo code
-        geo_mapping = {
-            'United States': 'us',
-            'Canada': 'ca',
-            'Mexico': 'mx',
-            'Brazil': 'br',
-            'Chile': 'ch',
-            'Argentina': 'ar',
-            'Colombia': 'co',
-            'Peru': 'pe',
-            'Ecuador': 'ec',
-            'Bolivia': 'bo',
-            'Paraguay': 'py',
-            'Uruguay': 'uy',
-            'Venezuela': 've',
-            'Guatemala': 'gt',
-            'Honduras': 'hn',
-            'El Salvador': 'sv',
-            'Nicaragua': 'ni',
-            'Costa Rica': 'cr',
-            'Panama': 'pa',
-            'Dominican Republic': 'do',
-            'Cuba': 'cu',
-            'Haiti': 'ht',
-            'Jamaica': 'jm',
-            'Trinidad and Tobago': 'tt',
-            'Barbados': 'bb',
-            'Bahamas': 'bs',
-            'Belize': 'bz',
-            'Guyana': 'gy',
-            'Suriname': 'sr',
-            'French Guiana': 'gf'
-        }
-        
-        geo = geo_mapping.get(country)
-        print(f"Mapped to geo: {geo}")
-        sys.stdout.flush()
-        
-        if not geo:
-            return jsonify({'error': f'No geo mapping found for country "{country}"'}), 400
-        
-        print(f"Getting project root...")
-        sys.stdout.flush()
-        
-        # Create custom newsletter data from form input
+        # Load country data from new JSON structure
         project_root = get_project_root()
-        print(f"Project root: {project_root}")
+        countries_file = os.path.join(project_root, 'data', 'country_languages.json')
+        
+        with open(countries_file, 'r', encoding='utf-8') as f:
+            countries_data = json.load(f)
+        
+        if country not in countries_data:
+            return jsonify({'error': f'Country "{country}" not found in country_languages.json'}), 400
+        
+        country_info = countries_data[country]
+        country_code = country_info.get('countryCode')
+        
+        if not country_code:
+            return jsonify({'error': f'No countryCode found for country "{country}"'}), 400
+        
+        print(f"Country code: {country_code}")
         sys.stdout.flush()
         
         # Load brand information
@@ -599,10 +568,10 @@ def build_newsletter_api():
         print(f"Brand data loaded successfully")
         sys.stdout.flush()
         
-        # Create custom newsletter data with form inputs
+        # Create custom newsletter data with form inputs using country_code
         custom_data = {
             'global': brand_data,
-            geo: {
+            country_code: {
                 'hero': {
                     'image_url': form_data['hero']['image'],
                     'cta_learn_more_url': form_data['hero'].get('learnMoreUrl', ''),
@@ -617,28 +586,29 @@ def build_newsletter_api():
             }
         }
         
-        # Get languages from country_languages.json
-        countries_file = os.path.join(project_root, 'data', 'country_languages.json')
-        with open(countries_file, 'r', encoding='utf-8') as f:
-            countries_data = json.load(f)
+        # Get languages from new JSON structure (languages is now a dict)
+        languages_dict = country_info.get('languages', {})
         
-        if country in countries_data:
-            languages = countries_data[country].get('languages', [])
+        for lang_name, lang_data in languages_dict.items():
+            lang_code = lang_data.get('languageCode')
+            locale = lang_data.get('locale')
+            preferred_name = lang_data.get('preferredName', country)  # Use country name as fallback
             
-            for lang_info in languages:
-                lang_code = lang_info[1]  # Get language code (e.g., 'en', 'fr')
-                lang_name = lang_info[0]  # Get language name (e.g., 'English', 'French')
+            if not lang_code or not locale:
+                print(f"Warning: Missing languageCode or locale for {lang_name}")
+                continue
                 
-                # Add full language info to the list (not just the code)
-                custom_data[geo]['languages'].append([lang_name, lang_code])
-                
-                # Create translation data with form inputs
-                custom_data[geo]['translations'][lang_code] = {
-                    'lang': lang_code,
-                    'dir': 'ltr',
-                    'metadata': {
-                        'country_name': country
-                    },
+            # Add language info to the list
+            custom_data[country_code]['languages'].append([lang_name, lang_code, locale, preferred_name])
+            
+            # Create translation data with form inputs
+            custom_data[country_code]['translations'][lang_code] = {
+                'lang': lang_code,
+                'locale': locale,
+                'dir': 'ltr',
+                'metadata': {
+                    'country_name': preferred_name  # Use preferred name for this language
+                },
                     'hero': {
                         'image_alt': form_data['hero'].get('imageAlt', f'Newsletter hero image for {country}'),
                         'headline': form_data['hero'].get('headline', f'Newsletter for {country}'),
@@ -654,13 +624,13 @@ def build_newsletter_api():
         
         print(f"\n=== STARTING NEWSLETTER GENERATION ===")
         print(f"Country: {country}")
-        print(f"Geo: {geo}")
-        print(f"Languages: {custom_data[geo]['languages']}")
+        print(f"Country Code: {country_code}")
+        print(f"Languages: {custom_data[country_code]['languages']}")
         sys.stdout.flush()
         
         # Collect user-provided images
         print(f"\n=== COLLECTING USER IMAGES ===")
-        user_images = collect_user_images(form_data, project_root, geo)
+        user_images = collect_user_images(form_data, project_root, country_code)
         print(f"User images collected: {len(user_images) if user_images else 0}")
         sys.stdout.flush()
         
@@ -669,18 +639,21 @@ def build_newsletter_api():
         generation_results = []
         local_files = []
         
-        print(f"\nGenerating newsletters for {len(custom_data[geo]['languages'])} languages...")
+        print(f"\nGenerating newsletters for {len(custom_data[country_code]['languages'])} languages...")
         sys.stdout.flush()
         
-        for lang_info in custom_data[geo]['languages']:
+        for lang_info in custom_data[country_code]['languages']:
             lang_name = lang_info[0]  # e.g., 'English'
             lang_code = lang_info[1]  # e.g., 'en'
+            locale = lang_info[2]     # e.g., 'en-CF'
+            preferred_name = lang_info[3]  # e.g., 'République Centrafricaine'
             
-            print(f"\nGenerating newsletter for {lang_name} ({lang_code})...")
+            print(f"\nGenerating newsletter for {lang_name} ({lang_code}) - {locale}...")
+            print(f"Using country name: {preferred_name}")
             sys.stdout.flush()
             
             result = generate_newsletter_for_geo_lang(
-                geo, lang_code, custom_data, successful_uploads, project_root, user_images, form_data
+                country_code, lang_code, custom_data, successful_uploads, project_root, user_images, form_data, locale, country, preferred_name
             )
             
             if result and result.get('local'):
@@ -704,7 +677,7 @@ def build_newsletter_api():
             'debug_info': {
                 'user_images_collected': len(user_images) if user_images else 0,
                 'languages_processed': len(local_files),
-                'geo': geo,
+                'country_code': country_code,
                 'country': country
             }
         })
@@ -718,93 +691,7 @@ def build_newsletter_api():
         sys.stdout.flush()
         return jsonify({'error': f'Newsletter generation failed: {str(e)}'}), 500
 
-@app.route('/api/generate-newsletter', methods=['POST'])
-def generate_newsletter_api():
-    """Generate newsletter for the selected country using existing data."""
-    try:
-        data = request.get_json()
-        country = data.get('country')
-        
-        if not country:
-            return jsonify({'error': 'Country is required'}), 400
-        
-        # Load country mappings
-        project_root = get_project_root()
-        countries_file = os.path.join(project_root, 'data', 'country_languages.json')
-        
-        with open(countries_file, 'r', encoding='utf-8') as f:
-            countries_data = json.load(f)
-        
-        if country not in countries_data:
-            return jsonify({'error': f'Country "{country}" not found'}), 400
-        
-        # Map country to geo code
-        geo_mapping = {
-            'United States': 'us',
-            'Canada': 'ca',
-            'Mexico': 'mx',
-            'Brazil': 'br',
-            'Chile': 'ch',
-            'Argentina': 'ar',
-            'Colombia': 'co',
-            'Peru': 'pe',
-            'Ecuador': 'ec',
-            'Bolivia': 'bo',
-            'Paraguay': 'py',
-            'Uruguay': 'uy',
-            'Venezuela': 've',
-            'Guatemala': 'gt',
-            'Honduras': 'hn',
-            'El Salvador': 'sv',
-            'Nicaragua': 'ni',
-            'Costa Rica': 'cr',
-            'Panama': 'pa',
-            'Dominican Republic': 'do',
-            'Cuba': 'cu',
-            'Haiti': 'ht',
-            'Jamaica': 'jm',
-            'Trinidad and Tobago': 'tt',
-            'Barbados': 'bb',
-            'Bahamas': 'bs',
-            'Belize': 'bz',
-            'Guyana': 'gy',
-            'Suriname': 'sr',
-            'French Guiana': 'gf'
-        }
-        
-        geo = geo_mapping.get(country)
-        if not geo:
-            return jsonify({'error': f'No geo mapping found for country "{country}"'}), 400
-        
-        # Load brand information (legacy endpoint - consider removing)
-        brand_file = os.path.join(project_root, 'data', 'brand_information.json')
-        with open(brand_file, 'r', encoding='utf-8') as f:
-            brand_data = json.load(f)
-        
-        # Create minimal data structure for legacy compatibility
-        newsletter_data = {'global': brand_data}
-        
-        if geo not in newsletter_data:
-            return jsonify({'error': f'No newsletter data found for geo "{geo}"'}), 400
-        
-        # Generate newsletters for all languages in the geo
-        successful_uploads = []
-        geo_data = newsletter_data[geo]
-        
-        if 'languages' not in geo_data:
-            return jsonify({'error': f'No languages defined for geo "{geo}"'}), 400
-        
-        for lang in geo_data['languages']:
-            generate_newsletter_for_geo_lang(geo, lang, newsletter_data, successful_uploads, project_root)
-        
-        return jsonify({
-            'success': True,
-            'templates': successful_uploads,
-            'message': f'Successfully generated {len(successful_uploads)} newsletter templates'
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# Old generate_newsletter_api function removed - now using build_newsletter_api with new JSON structure
 
 def get_project_root():
     """Get the project root directory."""
@@ -825,11 +712,13 @@ def main():
     print("Press Ctrl+C to stop the server")
     print("=" * 40)
     
-    # Open browser in a separate thread
-    threading.Thread(target=open_browser, daemon=True).start()
+    # Only open browser in the main process, not the reloader process
+    # This prevents multiple browser tabs from opening in debug mode
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        threading.Thread(target=open_browser, daemon=True).start()
     
     # Start Flask server
-    app.run(host='localhost', port=5000, debug=False)
+    app.run(host='localhost', port=5000, debug=True)
 
 if __name__ == '__main__':
     main()
