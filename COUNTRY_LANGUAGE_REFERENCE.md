@@ -1,9 +1,11 @@
-# Country, Geo Code, Language, Script Direction, and Local Name Reference
+# Country, Language Code, Script Direction, and Local Name Reference
 
-| Country                        | Geo code | Language                          | Script direction | Local country name                 |
-|--------------------------------|----------|-----------------------------------|------------------|------------------------------------|
-| Bahrain                        | bh       | English                           | ltr              |                                    |
-| Bahrain                        | bh-ar    | Arabic                            | rtl              |                                    |
+This reference shows the supported countries, languages, and RTL support in the newsletter generation system.
+
+| Country                        | Language Code | Language Name | Script Direction | Local Country Name (preferredName) |
+|--------------------------------|---------------|---------------|------------------|-------------------------------------|
+| Bahrain                        | en        | English                           | ltr              | Bahrain                             |
+| Bahrain                        | ar        | Arabic                            | rtl              | البحرين                             |
 | Botswana                       | bw       | English                           | ltr              |                                    |
 | Cameroun                       | cm       | English                           | ltr              |                                    |
 | Central African Republic       | cf       | English                           | ltr              |                                    |

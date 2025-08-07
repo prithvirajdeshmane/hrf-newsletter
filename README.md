@@ -1,6 +1,6 @@
 # Global Human Rights Foundation Newsletter Generation Tool
 
-A Python command-line tool for generating localized, multilingual email newsletters with robust geo/language fallback, image validation, and user-friendly CLI.
+A Python web-based tool for generating localized, multilingual email newsletters with RTL language support, image validation, and user-friendly web interface.
 
 ---
 
@@ -72,8 +72,10 @@ hrf-newsletter/
 
 ## Features
 
-- **Automated Newsletter Generation**: Creates localized HTML newsletters from a central JSON data source.
-- **Multi-Language Support**: Supports multiple translations for each geographical region (geo).
+- **Web-Based Interface**: User-friendly browser interface for building newsletters with drag-and-drop functionality.
+- **RTL Language Support**: Full support for Right-to-Left languages (Arabic, Hebrew, Persian) with proper text direction.
+- **Multi-Language Support**: Supports multiple languages per country with localized country names.
+- **Unicode Compatibility**: Handles Arabic text and other Unicode characters correctly on all platforms.
 - **Dynamic Image Path Handling**: Automatically adjusts image paths for correct local viewing.
 - **Mailchimp Integration**: 
   - **Template Upload**: Automatically uploads each generated newsletter as a new template in Mailchimp.
@@ -86,12 +88,56 @@ hrf-newsletter/
 
 ## Quick Start Guide
 
+1. **Start the web server**:
+   ```bash
+   python scripts/generate_newsletter.py
+   ```
+
+2. **Open your browser** to `http://localhost:5000`
+
+3. **Build your newsletter**:
+   - Select a country from the dropdown
+   - Upload hero image and add headline/description
+   - Add up to 2 story images with headlines and descriptions
+   - Add call-to-action buttons
+
+4. **Generate newsletters**:
+   - Click "Generate Newsletter"
+   - Downloads will be created for each language supported by the selected country
+   - Files are saved in `generated_newsletters/{Country_Name}/`
+
 ## Detailed Usage
 
-### 1. Edit Content
-- Update `data/brand_information.json` to modify foundation branding (name, footer, logo).
-- Each geo (e.g., `us`, `ca`, `cn`, `id`) is a top-level key.
-- **Each geo must have a `translations` block** for multilingual content (see below).
+### 1. Country & Language Configuration
+- Countries and languages are configured in `data/country_languages.json`
+- Each country can support multiple languages with localized country names
+- RTL languages (Arabic, Hebrew, etc.) use `"scriptDirection": "rtl"`
+
+#### JSON Structure Example:
+```json
+{
+  "Bahrain": {
+    "countryCode": "BH",
+    "languages": {
+      "English": {
+        "languageCode": "en",
+        "locale": "en-BH"
+      },
+      "Arabic": {
+        "languageCode": "ar",
+        "locale": "ar-BH",
+        "preferredName": "البحرين",
+        "scriptDirection": "rtl"
+      }
+    }
+  }
+}
+```
+
+**Key Features:**
+- `preferredName`: Localized country name in the target language
+- `scriptDirection`: "rtl" for Right-to-Left languages (defaults to "ltr")
+- `locale`: Full locale code for proper formatting
 - Add your newsletter images to the `images/` directory:
   - **Brand images** (shared across all geos): Place in `images/brand/` (e.g., `images/brand/HRF-Logo.png`)
   - **Geo-specific images**: Place in `images/{geo}/` (e.g., `images/us/hero.jpg`, `images/ch/story-1.jpg`)
