@@ -9,6 +9,10 @@ import copy
 import re
 from flask import Flask, request, jsonify, send_from_directory
 from dotenv import load_dotenv, set_key
+from googletrans import Translator
+import shutil
+from urllib.parse import urlparse
+import requests
 
 # Assuming mailchimp_template_upload, mailchimp_image_upload, and image_utils are in the same directory
 from mailchimp_template_upload import upload_template_to_mailchimp, MailchimpUploadError
@@ -18,6 +22,90 @@ from image_utils import compress_image_if_needed
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hrf-newsletter-secret-key'
+
+# Initialize translator
+translator = Translator()
+
+def translate_text(text, target_language, source_language='en'):
+    """Translate text to target language using Google Translate."""
+    if not text or not text.strip():
+        return text
+    
+    # Skip translation if target is same as source
+    if target_language == source_language:
+        return text
+        
+    try:
+        result = translator.translate(text, dest=target_language, src=source_language)
+        return result.text
+    except Exception as e:
+        print(f"Warning: Translation failed for '{text}' to {target_language}: {e}")
+        return text  # Return original text if translation fails
+
+def download_image_from_url(url, local_path):
+    """Download an image from URL to local path."""
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        
+        with open(local_path, 'wb') as f:
+            shutil.copyfileobj(response.raw, f)
+        
+        return True
+    except Exception as e:
+        print(f"Error downloading image from {url}: {e}")
+        return False
+
+def collect_user_images(form_data, project_root, geo):
+    """Collect and process user-provided images from form data."""
+    user_images = []
+    temp_dir = os.path.join(project_root, 'temp_images')
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    # Process hero image
+    hero_image = form_data.get('hero', {}).get('image', '')
+    if hero_image:
+        if hero_image.startswith('http'):
+            # Download from URL
+            filename = f"hero_{geo}.jpg"
+            local_path = os.path.join(temp_dir, filename)
+            if download_image_from_url(hero_image, local_path):
+                user_images.append((f"temp_images/{filename}", local_path))
+        else:
+            # Assume it's a local file path or base64 data
+            # For now, we'll handle URL case primarily
+            pass
+    
+    # Process story images
+    for i, story in enumerate(form_data.get('stories', [])):
+        story_image = story.get('image', '')
+        if story_image and story_image.startswith('http'):
+            filename = f"story{i+1}_{geo}.jpg"
+            local_path = os.path.join(temp_dir, filename)
+            if download_image_from_url(story_image, local_path):
+                user_images.append((f"temp_images/{filename}", local_path))
+    
+    return user_images
+
+def save_local_newsletter(html_content, geo, lang, project_root):
+    """Save newsletter HTML to local generated_newsletters folder."""
+    output_dir = os.path.join(project_root, 'generated_newsletters')
+    os.makedirs(output_dir, exist_ok=True)
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"newsletter_{geo}_{lang}_{timestamp}.html"
+    filepath = os.path.join(output_dir, filename)
+    
+    try:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        print(f"Local newsletter saved: {filename}")
+        return filename
+    except Exception as e:
+        print(f"Error saving local newsletter: {e}")
+        return None
 
 def deep_merge(source, destination):
     """Recursively merges source dict into a copy of destination dict, intelligently merging lists of objects."""
@@ -36,8 +124,8 @@ def deep_merge(source, destination):
 
 
 
-def find_all_images_to_upload(geo, project_root):
-    """Finds all image files in images/brand and images/{geo} folders that need to be uploaded."""
+def find_all_images_to_upload(project_root, user_images=None):
+    """Finds all image files in images/brand folder and user-provided images that need to be uploaded."""
     image_files = []
     
     # Find all images in brand folder
@@ -48,15 +136,14 @@ def find_all_images_to_upload(geo, project_root):
                 relative_path = f"images/brand/{filename}"
                 full_path = os.path.join(brand_images_dir, filename)
                 image_files.append((relative_path, full_path))
+        print(f"Found {len(image_files)} brand images")
+    else:
+        print("Warning: images/brand folder not found")
     
-    # Find all images in geo-specific folder
-    geo_images_dir = os.path.join(project_root, 'images', geo)
-    if os.path.exists(geo_images_dir):
-        for filename in os.listdir(geo_images_dir):
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
-                relative_path = f"images/{geo}/{filename}"
-                full_path = os.path.join(geo_images_dir, filename)
-                image_files.append((relative_path, full_path))
+    # Add user-provided images
+    if user_images:
+        image_files.extend(user_images)
+        print(f"Added {len(user_images)} user-provided images")
     
     return image_files
 
@@ -68,19 +155,10 @@ def find_image_urls_in_html(html_content):
     matches = re.findall(img_src_pattern, html_content, re.IGNORECASE)
     return list(set(matches))  # Return unique URLs
 
-def validate_image_folders(geo, project_root):
-    """Validates that the required image folders exist."""
-    missing_folders = []
-    
+def validate_brand_folder(project_root):
+    """Validates that the brand images folder exists."""
     brand_folder = os.path.join(project_root, 'images', 'brand')
-    if not os.path.exists(brand_folder):
-        missing_folders.append('images/brand')
-    
-    geo_folder = os.path.join(project_root, 'images', geo)
-    if not os.path.exists(geo_folder):
-        missing_folders.append(f'images/{geo}')
-    
-    return missing_folders
+    return os.path.exists(brand_folder)
 
 def get_newsletter_context(data, geo, lang):
     """Constructs the final context for a given geo and language, handling all data merging."""
@@ -110,85 +188,116 @@ def get_newsletter_context(data, geo, lang):
 
     return final_data, f"{geo}-{lang}"
 
-def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, project_root):
-    """Generates a newsletter for a specific geo and language, then uploads it to Mailchimp."""
+def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, project_root, user_images=None, form_data=None):
+    """Generates a newsletter for a specific geo and language with translation, local saving, and Mailchimp upload."""
+    print(f"\n=== Generating newsletter for {geo}-{lang} ===")
+    
+    # Get base context
     context, resolved_geo = get_newsletter_context(data, geo, lang)
-
     if not context:
-        print(f"\nError: Could not build context for geo '{geo}-{lang}'. Skipping.")
+        print(f"Error: Could not build context for geo '{geo}-{lang}'. Skipping.")
         return
 
-    # --- Validate image folders exist ---
-    missing_folders = validate_image_folders(geo, project_root)
-    if missing_folders:
-        print(f"\nError: For geo '{geo}', missing image folders:")
-        for folder in missing_folders:
-            print(f"- {folder}")
-        sys.exit(1)
+    # --- Apply translations if form_data is provided ---
+    if form_data and lang != 'en':
+        print(f"Translating content to {lang}...")
+        
+        # Translate hero content
+        if 'hero' in context:
+            if 'image_alt' in context['hero']:
+                context['hero']['image_alt'] = translate_text(context['hero']['image_alt'], lang)
+            if 'headline' in context['hero']:
+                context['hero']['headline'] = translate_text(context['hero']['headline'], lang)
+            if 'description' in context['hero']:
+                context['hero']['description'] = translate_text(context['hero']['description'], lang)
+            
+            # Translate CTA buttons
+            if 'ctas_buttons' in context['hero']:
+                for cta in context['hero']['ctas_buttons']:
+                    if 'text' in cta:
+                        cta['text'] = translate_text(cta['text'], lang)
+        
+        # Translate stories content
+        if 'stories' in context:
+            for story in context['stories']:
+                if 'image_alt' in story:
+                    story['image_alt'] = translate_text(story['image_alt'], lang)
+                if 'headline' in story:
+                    story['headline'] = translate_text(story['headline'], lang)
+                if 'description' in story:
+                    story['description'] = translate_text(story['description'], lang)
 
+    # --- Validate brand folder exists ---
+    if not validate_brand_folder(project_root):
+        print(f"Warning: images/brand folder not found")
+        # Continue with processing - user images may still be available
+
+    # --- Render HTML template ---
     template_loader = FileSystemLoader(searchpath=os.path.join(project_root, 'templates'))
     env = Environment(loader=template_loader)
     template = env.get_template('newsletter_template.html')
     html_content = template.render(context)
 
-    # --- Upload ALL images from global and geo folders ---
+    # --- Save local copy ---
+    print("Saving local newsletter...")
+    local_filename = save_local_newsletter(html_content, geo, lang, project_root)
+    
+    # --- Prepare for Mailchimp upload ---
     html_for_mailchimp = html_content
     try:
-        # Find all images that need to be uploaded
-        images_to_upload = find_all_images_to_upload(geo, project_root)
-        print(f"Found {len(images_to_upload)} images to upload from brand and {geo} folders")
+        # Collect all images (brand + user-provided)
+        all_images = find_all_images_to_upload(project_root, user_images)
+        print(f"Found {len(all_images)} total images to upload")
         
-        local_to_mailchimp_url = {}
-        
-        # Upload all images and build URL mapping
-        url_mappings = {}  # Maps relative_path to mailchimp_url
-        
-        for relative_path, full_path in images_to_upload:
-            compressed_path = compress_image_if_needed(full_path)
-            mailchimp_url = upload_image_to_mailchimp(compressed_path)
-            url_mappings[relative_path] = mailchimp_url
-        
-        # Find all image URLs actually used in the rendered HTML
-        html_image_urls = find_image_urls_in_html(html_content)
-        print(f"Found {len(html_image_urls)} image URLs in rendered HTML: {html_image_urls}")
-        
-        # Replace URLs in HTML, handling different URL formats
-        # Sort by length (longest first) to avoid partial replacements
-        all_possible_urls = []
-        for relative_path, mailchimp_url in url_mappings.items():
-            # Generate all possible URL variants for this image
-            variants = [
-                f"./{relative_path}",  # ./images/brand/HRF-Logo.png
-                f"/{relative_path}",   # /images/brand/HRF-Logo.png  
-                relative_path,         # images/brand/HRF-Logo.png
-            ]
-            for variant in variants:
-                all_possible_urls.append((variant, mailchimp_url))
-        
-        # Sort by URL length (longest first) to avoid partial matches
-        all_possible_urls.sort(key=lambda x: len(x[0]), reverse=True)
-        
-        # Replace URLs in the HTML
-        for local_url, mailchimp_url in all_possible_urls:
-            # Only replace if the local URL actually appears in the HTML
-            if local_url in html_for_mailchimp:
-                html_for_mailchimp = html_for_mailchimp.replace(local_url, mailchimp_url)
-                print(f"Replaced '{local_url}' with '{mailchimp_url}'")
+        if all_images:
+            # Upload all images and build URL mapping
+            url_mappings = {}  # Maps relative_path to mailchimp_url
+            
+            for relative_path, full_path in all_images:
+                print(f"Processing image: {relative_path}")
+                compressed_path = compress_image_if_needed(full_path)
+                mailchimp_url = upload_image_to_mailchimp(compressed_path)
+                url_mappings[relative_path] = mailchimp_url
+                print(f"Uploaded: {relative_path} -> {mailchimp_url}")
+            
+            # Replace URLs in HTML for Mailchimp
+            print("Replacing image URLs for Mailchimp...")
+            all_possible_urls = []
+            for relative_path, mailchimp_url in url_mappings.items():
+                # Generate all possible URL variants for this image
+                variants = [
+                    f"./{relative_path}",  # ./images/brand/HRF-Logo.png
+                    f"/{relative_path}",   # /images/brand/HRF-Logo.png  
+                    relative_path,         # images/brand/HRF-Logo.png
+                ]
+                for variant in variants:
+                    all_possible_urls.append((variant, mailchimp_url))
+            
+            # Sort by URL length (longest first) to avoid partial matches
+            all_possible_urls.sort(key=lambda x: len(x[0]), reverse=True)
+            
+            # Replace URLs in the HTML
+            for local_url, mailchimp_url in all_possible_urls:
+                if local_url in html_for_mailchimp:
+                    html_for_mailchimp = html_for_mailchimp.replace(local_url, mailchimp_url)
+                    print(f"Replaced '{local_url}' with Mailchimp URL")
 
     except (MailchimpImageUploadError, Exception) as e:
-        print(f"\nERROR: Failed during image processing for geo '{resolved_geo}'.")
+        print(f"ERROR: Failed during image processing for geo '{geo}-{lang}'.")
         print(f"Reason: {e}")
         sys.exit(1)
 
-    # --- Upload to Mailchimp ---
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    template_name = f"newsletter_{resolved_geo}_{timestamp}"
+    # --- Upload to Mailchimp with improved naming ---
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    template_name = f"newsletter_{geo}_{lang}_{timestamp}"
     try:
+        print(f"Uploading to Mailchimp: {template_name}")
         upload_template_to_mailchimp(html_for_mailchimp, template_name)
         print(f"Successfully uploaded '{template_name}' to Mailchimp.")
         successful_uploads.append(template_name)
+        return {'local': local_filename, 'mailchimp': template_name}
     except MailchimpUploadError as e:
-        print(f"\nERROR: Failed to upload newsletter '{template_name}'.")
+        print(f"ERROR: Failed to upload newsletter '{template_name}'.")
         print(f"Reason: {e}")
         sys.exit(1)
 
@@ -308,14 +417,14 @@ def build_newsletter_api():
         # Create custom newsletter data from form input
         project_root = get_project_root()
         
-        # Load base newsletter data structure
-        data_file = os.path.join(project_root, 'data', 'newsletter_data.json')
-        with open(data_file, 'r', encoding='utf-8') as f:
-            base_data = json.load(f)
+        # Load brand information
+        brand_file = os.path.join(project_root, 'data', 'brand_information.json')
+        with open(brand_file, 'r', encoding='utf-8') as f:
+            brand_data = json.load(f)
         
         # Create custom newsletter data with form inputs
         custom_data = {
-            'global': base_data.get('global', {}),
+            'global': brand_data,
             geo: {
                 'hero': {
                     'image_url': form_data['hero']['image'],
@@ -366,11 +475,31 @@ def build_newsletter_api():
                     } for i, story in enumerate(form_data.get('stories', []))]
                 }
         
-        # Generate newsletters for all languages
-        successful_uploads = []
+        # Collect user-provided images
+        print(f"Collecting user images for {country} ({geo})...")
+        user_images = collect_user_images(form_data, project_root, geo)
         
+        # Generate newsletters for all languages with translation
+        successful_uploads = []
+        generation_results = []
+        
+        print(f"Generating newsletters for {len(custom_data[geo]['languages'])} languages...")
         for lang in custom_data[geo]['languages']:
-            generate_newsletter_for_geo_lang(geo, lang, custom_data, successful_uploads, project_root)
+            result = generate_newsletter_for_geo_lang(
+                geo, lang, custom_data, successful_uploads, project_root, 
+                user_images=user_images, form_data=form_data
+            )
+            if result:
+                generation_results.append(result)
+        
+        # Clean up temporary images
+        temp_dir = os.path.join(project_root, 'temp_images')
+        if os.path.exists(temp_dir):
+            try:
+                shutil.rmtree(temp_dir)
+                print("Cleaned up temporary images")
+            except Exception as e:
+                print(f"Warning: Could not clean up temp images: {e}")
         
         return jsonify({
             'success': True,
@@ -439,10 +568,13 @@ def generate_newsletter_api():
         if not geo:
             return jsonify({'error': f'No geo mapping found for country "{country}"'}), 400
         
-        # Load newsletter data
-        data_file = os.path.join(project_root, 'data', 'newsletter_data.json')
-        with open(data_file, 'r', encoding='utf-8') as f:
-            newsletter_data = json.load(f)
+        # Load brand information (legacy endpoint - consider removing)
+        brand_file = os.path.join(project_root, 'data', 'brand_information.json')
+        with open(brand_file, 'r', encoding='utf-8') as f:
+            brand_data = json.load(f)
+        
+        # Create minimal data structure for legacy compatibility
+        newsletter_data = {'global': brand_data}
         
         if geo not in newsletter_data:
             return jsonify({'error': f'No newsletter data found for geo "{geo}"'}), 400

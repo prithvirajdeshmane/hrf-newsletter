@@ -29,7 +29,7 @@ hrf-newsletter/
 ├── templates/
 │   └── newsletter_template.html        # Jinja2 newsletter template
 ├── data/
-│   └── newsletter_data.json           # Newsletter content configuration
+│   └── brand_information.json         # Brand configuration (foundation name, footer, logo)
 ├── images/
 │   ├── global/                        # Global images (logos, etc.)
 │   └── {geo}/                         # Geo-specific images
@@ -89,7 +89,7 @@ hrf-newsletter/
 ## Detailed Usage
 
 ### 1. Edit Content
-- Update `data/newsletter_data.json` to add or modify geos and languages.
+- Update `data/brand_information.json` to modify foundation branding (name, footer, logo).
 - Each geo (e.g., `us`, `ca`, `cn`, `id`) is a top-level key.
 - **Each geo must have a `translations` block** for multilingual content (see below).
 - Add your newsletter images to the `images/` directory:
@@ -124,7 +124,7 @@ pip install -r requirements.txt
 ---
 
 ### 2. **Prepare Your JSON Configuration**
-- Open the main configuration file (`data/newsletter_data.json`).
+- Open the brand configuration file (`data/brand_information.json`).
 - Add a new block for your country using the geo code.
 
 Each geo must include the following:
@@ -229,7 +229,7 @@ You will get:
 ### 2a. Global Logo Banner
 - The newsletter includes a banner at the top with your logo centered.
 - Place your logo at `images/brand/HRF-Logo.png` (PNG recommended, max width 200px for best appearance).
-- **Important**: Ensure the `logo_url` field is defined in the `global` section of your `newsletter_data.json`:
+- **Important**: Ensure the `logo_url` field is defined in your `brand_information.json`:
   ```json
   "global": {
     "foundation_name": "Global Human Rights Foundation",
@@ -283,7 +283,7 @@ You will get:
 ```
 
 ### 6. Adding New Geos or Languages
-- Add a new block in `newsletter_data.json` for the geo code.
+- Note: Geo-specific configuration is no longer needed - all content is now provided via the web interface.
 - Add a `translations` block with language codes as keys (e.g., `en`, `fr`, `zh`, `id`).
 - Provide all required fields (see examples above).
 
@@ -296,7 +296,7 @@ You will get:
 
 #### Mailchimp Template Issues
 - If images don't appear in uploaded Mailchimp templates:
-  - Check that the `logo_url` field is defined in the `global` section of `newsletter_data.json`.
+  - Check that the `logo_url` field is defined in `brand_information.json`.
   - Verify that image files exist in the expected folders before running the script.
   - Review the console output for successful image uploads and URL replacements.
 
