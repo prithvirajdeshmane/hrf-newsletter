@@ -319,13 +319,15 @@
                 
                 if (response.ok) {
                     document.getElementById('credentialsModal').style.display = 'none';
-                    alert('Credentials saved successfully!');
+                    // Credentials saved successfully - modal closes silently
                 } else {
-                    alert('Error saving credentials. Please try again.');
+                    const result = await response.json();
+                    const errorMessage = result.error || 'Error saving credentials. Please try again.';
+                    alert(errorMessage);
                 }
             } catch (error) {
                 console.error('Error saving credentials:', error);
-                alert('Error saving credentials. Please try again.');
+                alert('Network error. Please check your connection and try again.');
             }
         });
 

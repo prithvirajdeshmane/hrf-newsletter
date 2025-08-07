@@ -521,40 +521,165 @@ def get_countries():
 @app.route('/api/check-credentials')
 def check_credentials():
     """Check if Mailchimp credentials are set."""
-    load_dotenv()
-    api_key = os.getenv('MAILCHIMP_API_KEY')
-    server_prefix = os.getenv('MAILCHIMP_SERVER_PREFIX')
+    import os
     
-    has_credentials = bool(api_key and api_key.strip() and server_prefix and server_prefix.strip())
+    # Check if .env file exists
+    project_root = get_project_root()
+    env_file_path = os.path.join(project_root, '.env')
+    env_file_exists = os.path.exists(env_file_path)
     
-    return jsonify({'hasCredentials': has_credentials})
+    print(f"🔍 Checking credentials:")
+    print(f"   Project root: {project_root}")
+    print(f"   .env file path: {env_file_path}")
+    print(f"   .env file exists: {env_file_exists}")
+    
+    # Clear any existing environment variables to avoid cache issues
+    if 'MAILCHIMP_API_KEY' in os.environ:
+        del os.environ['MAILCHIMP_API_KEY']
+    if 'MAILCHIMP_SERVER_PREFIX' in os.environ:
+        del os.environ['MAILCHIMP_SERVER_PREFIX']
+    
+    # Only load from .env file if it exists
+    api_key = None
+    server_prefix = None
+    
+    if env_file_exists:
+        # Load environment variables from .env file
+        load_dotenv(env_file_path, override=True)
+        api_key = os.getenv('MAILCHIMP_API_KEY')
+        server_prefix = os.getenv('MAILCHIMP_SERVER_PREFIX')
+    
+    print(f"   API key found: {bool(api_key)}")
+    print(f"   Server prefix found: {bool(server_prefix)}")
+    if api_key:
+        print(f"   API key preview: {api_key[:10]}...")
+    if server_prefix:
+        print(f"   Server prefix: {server_prefix}")
+    
+    # Credentials are valid only if both exist and are non-empty
+    has_credentials = bool(
+        env_file_exists and 
+        api_key and api_key.strip() and 
+        server_prefix and server_prefix.strip()
+    )
+    
+    print(f"   Final result: hasCredentials = {has_credentials}")
+    
+    return jsonify({
+        'hasCredentials': has_credentials,
+        'debug': {
+            'envFileExists': env_file_exists,
+            'envFilePath': env_file_path,
+            'hasApiKey': bool(api_key),
+            'hasServerPrefix': bool(server_prefix)
+        }
+    })
 
 @app.route('/api/save-credentials', methods=['POST'])
 def save_credentials():
-    """Save Mailchimp credentials to .env file."""
+    """Save Mailchimp credentials to .env file with comprehensive validation."""
+    import re
+    import datetime
+    
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid JSON data',
+                'details': ['Request body must contain valid JSON']
+            }), 400
+        
         api_key = data.get('apiKey', '').strip()
         server_prefix = data.get('serverPrefix', '').strip()
         
+        # Basic presence validation
         if not api_key or not server_prefix:
-            return jsonify({'error': 'Both API key and server prefix are required'}), 400
+            return jsonify({
+                'success': False,
+                'error': 'API key and server prefix are required',
+                'details': [
+                    'API key cannot be empty' if not api_key else None,
+                    'Server prefix cannot be empty' if not server_prefix else None
+                ],
+                'suggestions': [
+                    'Get your API key from Mailchimp Account > Extras > API keys',
+                    'Server prefix is usually like "us21", "eu3", etc.'
+                ]
+            }), 400
         
+        validation_errors = []
+        
+        # Validate API key format (32 hex characters + dash + server prefix)
+        api_key_pattern = r'^[a-f0-9]{32}-[a-z]{2}\d+$'
+        if not re.match(api_key_pattern, api_key):
+            validation_errors.append('Invalid API key format. Expected: 32 hex characters, dash, then server prefix (e.g., "abc123...xyz-us21")')
+        
+        # Validate server prefix format (2 letters + numbers)
+        server_prefix_pattern = r'^[a-z]{2}\d+$'
+        if not re.match(server_prefix_pattern, server_prefix):
+            validation_errors.append('Invalid server prefix format. Expected: 2 lowercase letters followed by numbers (e.g., "us21", "eu3")')
+        
+        # Cross-validation: API key should end with server prefix
+        if api_key and server_prefix and '-' in api_key:
+            api_key_suffix = api_key.split('-')[-1]
+            if api_key_suffix != server_prefix:
+                validation_errors.append(f'API key server suffix "{api_key_suffix}" does not match server prefix "{server_prefix}"')
+        
+        # If validation errors, return them
+        if validation_errors:
+            return jsonify({
+                'success': False,
+                'error': 'Credential validation failed',
+                'details': validation_errors,
+                'suggestions': [
+                    'Check your Mailchimp account settings for the correct API key',
+                    'Ensure the server prefix matches your account region',
+                    'API key format: 32 hex chars + dash + server prefix',
+                    'Server prefix examples: us21, eu3, au1'
+                ]
+            }), 400
+        
+        # Save credentials to .env file
         project_root = get_project_root()
-        env_file = os.path.join(project_root, '.env')
+        env_file_path = os.path.join(project_root, '.env')
         
-        # Create .env file if it doesn't exist
-        if not os.path.exists(env_file):
-            with open(env_file, 'w') as f:
-                f.write('')
+        print(f"💾 Saving credentials to: {env_file_path}")
         
-        # Save credentials
-        set_key(env_file, 'MAILCHIMP_API_KEY', api_key)
-        set_key(env_file, 'MAILCHIMP_SERVER_PREFIX', server_prefix)
+        # Create/overwrite .env file with UTF-8 encoding
+        env_content = f"""# Mailchimp API Credentials
+# Generated on {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+MAILCHIMP_API_KEY={api_key}
+MAILCHIMP_SERVER_PREFIX={server_prefix}
+"""
         
-        return jsonify({'success': True})
+        with open(env_file_path, 'w', encoding='utf-8') as f:
+            f.write(env_content)
+        
+        print(f"✅ Credentials saved successfully")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Credentials saved successfully',
+            'timestamp': datetime.datetime.now().isoformat(),
+            'nextSteps': [
+                'Test your connection using the "Test Connection" button',
+                'Generate your first newsletter',
+                'Check the Mailchimp integration status'
+            ]
+        }), 200
+        
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"❌ Error saving credentials: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}',
+            'suggestions': [
+                'Check file permissions in the project directory',
+                'Ensure the project directory is writable',
+                'Try again or contact support if the issue persists'
+            ]
+        }), 500
 
 @app.route('/api/build-newsletter', methods=['POST'])
 def build_newsletter_api():
