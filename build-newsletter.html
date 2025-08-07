@@ -369,16 +369,34 @@
             document.getElementById(fileInputId).click();
         }
 
-        // Setup file input handlers
+        // Setup file input handlers with base64 conversion
         function setupFileInput(textInputId, fileInputId) {
             const fileInput = document.getElementById(fileInputId);
             const textInput = document.getElementById(textInputId);
             
             fileInput.addEventListener('change', function(e) {
                 if (e.target.files.length > 0) {
-                    const fileName = e.target.files[0].name;
-                    textInput.value = fileName;
+                    const file = e.target.files[0];
+                    const fileName = file.name;
+                    
+                    // Show filename in the text input
+                    textInput.value = `📁 ${fileName}`;
                     textInput.setAttribute('data-file-selected', 'true');
+                    
+                    // Convert file to base64 data URL
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Store the base64 data URL in a data attribute
+                        textInput.setAttribute('data-file-data', e.target.result);
+                        console.log(`File ${fileName} converted to base64 (${Math.round(e.target.result.length/1024)}KB)`);
+                    };
+                    reader.onerror = function() {
+                        console.error(`Failed to read file: ${fileName}`);
+                        textInput.value = '';
+                        textInput.removeAttribute('data-file-selected');
+                        textInput.removeAttribute('data-file-data');
+                    };
+                    reader.readAsDataURL(file);
                 }
             });
         }
@@ -505,12 +523,26 @@
             document.getElementById('loadingDiv').style.display = 'block';
             
             try {
+                // Helper function to get image data (URL or base64)
+                function getImageData(inputId) {
+                    const input = document.getElementById(inputId);
+                    const fileData = input.getAttribute('data-file-data');
+                    const isFileSelected = input.getAttribute('data-file-selected') === 'true';
+                    
+                    if (isFileSelected && fileData) {
+                        return fileData; // Return base64 data URL
+                    } else {
+                        return input.value.trim(); // Return URL or empty string
+                    }
+                }
+                
                 // Collect all form data
+                const heroImageData = getImageData('heroImage');
                 const formData = {
                     country: selectedCountry,
-                    languages: selectedLanguages.join(','), // Convert array to comma-separated string
+                    languages: selectedLanguages ? selectedLanguages.join(',') : '', // Convert array to comma-separated string
                     hero: {
-                        image: heroImage,
+                        image: heroImageData,
                         imageAlt: document.getElementById('heroImageAlt').value.trim(),
                         headline: document.getElementById('heroHeadline').value.trim(),
                         description: document.getElementById('heroDescription').value.trim(),
@@ -533,14 +565,14 @@
                 // Collect story data
                 const storyCount = parseInt(document.getElementById('storyCount').value);
                 for (let i = 1; i <= storyCount; i++) {
-                    const image = document.getElementById(`storyImage${i}`).value.trim();
+                    const imageData = getImageData(`storyImage${i}`);
                     const imageAlt = document.getElementById(`storyImageAlt${i}`).value.trim();
                     const headline = document.getElementById(`storyHeadline${i}`).value.trim();
                     const description = document.getElementById(`storyDescription${i}`).value.trim();
                     const url = document.getElementById(`storyUrl${i}`).value.trim();
-                    if (image && url) {
+                    if (imageData && url) {
                         formData.stories.push({ 
-                            image, 
+                            image: imageData, 
                             imageAlt, 
                             headline, 
                             description, 
@@ -561,11 +593,15 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(`Newsletter(s) generated successfully!\n\nGenerated templates:\n${result.templates.join('\n')}`);
+                    if (result.local_files && result.local_files.length > 0) {
+                        alert(`Newsletter(s) generated successfully!\n\nGenerated files:\n${result.local_files.join('\n')}`);
+                    } else {
+                        alert(`${result.message || 'Success'}`);
+                    }
                     // Optionally redirect back to main page
                     // window.location.href = '/';
                 } else {
-                    alert(`Error generating newsletter: ${result.error}`);
+                    alert(`Error generating newsletter: ${result.error || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.error('Error generating newsletter:', error);

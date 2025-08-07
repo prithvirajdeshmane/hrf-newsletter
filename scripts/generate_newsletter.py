@@ -42,6 +42,56 @@ def translate_text(text, target_language, source_language='en'):
         print(f"Warning: Translation failed for '{text}' to {target_language}: {e}")
         return text  # Return original text if translation fails
 
+def save_base64_image(base64_data, local_path):
+    """Save a base64 data URL as a local image file."""
+    try:
+        print(f"Processing base64 image data...")
+        print(f"Target path: {local_path}")
+        print(f"Target directory: {os.path.dirname(local_path)}")
+        
+        # Extract the base64 data from the data URL
+        if base64_data.startswith('data:'):
+            # Format: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...
+            header, data = base64_data.split(',', 1)
+            print(f"Base64 header: {header}")
+            
+            # Decode base64 data
+            import base64
+            image_data = base64.b64decode(data)
+            print(f"Decoded image data size: {len(image_data)} bytes")
+            
+            # Create directory with better error handling
+            try:
+                target_dir = os.path.dirname(local_path)
+                print(f"Creating directory: {target_dir}")
+                os.makedirs(target_dir, exist_ok=True)
+                print(f"Directory created successfully")
+            except Exception as dir_error:
+                print(f"Error creating directory {target_dir}: {dir_error}")
+                raise
+            
+            # Write file with better error handling
+            try:
+                print(f"Writing file: {local_path}")
+                with open(local_path, 'wb') as f:
+                    f.write(image_data)
+                print(f"File written successfully")
+            except Exception as file_error:
+                print(f"Error writing file {local_path}: {file_error}")
+                raise
+            
+            print(f"Successfully saved base64 image to: {local_path} ({len(image_data)} bytes)")
+            return True
+        else:
+            print(f"Invalid base64 data format: {base64_data[:50]}...")
+            return False
+    except Exception as e:
+        print(f"Error saving base64 image: {e}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        return False
+
 def download_image_from_url(url, local_path):
     """Download an image from URL to local path."""
     try:
@@ -73,10 +123,19 @@ def collect_user_images(form_data, project_root, geo):
     
     # Process hero image
     hero_image = form_data.get('hero', {}).get('image', '')
-    print(f"Hero image URL: {hero_image}")
+    print(f"Hero image data: {hero_image[:100]}..." if len(hero_image) > 100 else f"Hero image data: {hero_image}")
     if hero_image:
-        if hero_image.startswith('http'):
-            # Determine file extension from URL or default to jpg
+        if hero_image.startswith('data:'):
+            # Handle base64 data URL
+            filename = f"hero_{geo}.jpg"  # Default to jpg for base64
+            local_path = os.path.join(temp_dir, filename)
+            if save_base64_image(hero_image, local_path):
+                user_images.append((f"temp_images/{filename}", local_path))
+                print(f"Successfully collected hero image from base64: {filename}")
+            else:
+                print(f"Failed to save hero image from base64 data")
+        elif hero_image.startswith('http'):
+            # Handle regular URL
             try:
                 parsed_url = urlparse(hero_image)
                 path = parsed_url.path
@@ -94,36 +153,50 @@ def collect_user_images(form_data, project_root, geo):
             local_path = os.path.join(temp_dir, filename)
             if download_image_from_url(hero_image, local_path):
                 user_images.append((f"temp_images/{filename}", local_path))
-                print(f"Successfully collected hero image: {filename}")
+                print(f"Successfully collected hero image from URL: {filename}")
             else:
                 print(f"Failed to download hero image from: {hero_image}")
+        else:
+            print(f"Unsupported hero image format: {hero_image[:50]}...")
     
     # Process story images
     for i, story in enumerate(form_data.get('stories', [])):
         story_image = story.get('image', '')
-        print(f"Story {i+1} image URL: {story_image}")
-        if story_image and story_image.startswith('http'):
-            # Determine file extension from URL or default to jpg
-            try:
-                parsed_url = urlparse(story_image)
-                path = parsed_url.path
-                if '.' in path:
-                    ext = path.split('.')[-1].lower()
-                    if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
-                        filename = f"story{i+1}_{geo}.{ext}"
+        print(f"Story {i+1} image data: {story_image[:100]}..." if len(story_image) > 100 else f"Story {i+1} image data: {story_image}")
+        if story_image:
+            if story_image.startswith('data:'):
+                # Handle base64 data URL
+                filename = f"story{i+1}_{geo}.jpg"  # Default to jpg for base64
+                local_path = os.path.join(temp_dir, filename)
+                if save_base64_image(story_image, local_path):
+                    user_images.append((f"temp_images/{filename}", local_path))
+                    print(f"Successfully collected story {i+1} image from base64: {filename}")
+                else:
+                    print(f"Failed to save story {i+1} image from base64 data")
+            elif story_image.startswith('http'):
+                # Handle regular URL
+                try:
+                    parsed_url = urlparse(story_image)
+                    path = parsed_url.path
+                    if '.' in path:
+                        ext = path.split('.')[-1].lower()
+                        if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
+                            filename = f"story{i+1}_{geo}.{ext}"
+                        else:
+                            filename = f"story{i+1}_{geo}.jpg"
                     else:
                         filename = f"story{i+1}_{geo}.jpg"
-                else:
+                except:
                     filename = f"story{i+1}_{geo}.jpg"
-            except:
-                filename = f"story{i+1}_{geo}.jpg"
-            
-            local_path = os.path.join(temp_dir, filename)
-            if download_image_from_url(story_image, local_path):
-                user_images.append((f"temp_images/{filename}", local_path))
-                print(f"Successfully collected story {i+1} image: {filename}")
+                
+                local_path = os.path.join(temp_dir, filename)
+                if download_image_from_url(story_image, local_path):
+                    user_images.append((f"temp_images/{filename}", local_path))
+                    print(f"Successfully collected story {i+1} image from URL: {filename}")
+                else:
+                    print(f"Failed to download story {i+1} image from: {story_image}")
             else:
-                print(f"Failed to download story {i+1} image from: {story_image}")
+                print(f"Unsupported story {i+1} image format: {story_image[:50]}...")
     
     print(f"Total user images collected: {len(user_images)}")
     return user_images
@@ -151,24 +224,29 @@ def copy_images_for_local_newsletter(all_images, project_root):
     return copied_images
 
 def save_local_newsletter(html_content, geo, lang, project_root, all_images=None):
-    """Save newsletter HTML to local generated_newsletters folder with images."""
-    output_dir = os.path.join(project_root, 'generated_newsletters')
-    os.makedirs(output_dir, exist_ok=True)
+    """Save newsletter HTML to local generated_newsletters/{geo} folder with images."""
+    # Create geo-specific folder: /generated_newsletters/{geo}/
+    geo_output_dir = os.path.join(project_root, 'generated_newsletters', geo)
+    os.makedirs(geo_output_dir, exist_ok=True)
+    print(f"Ensuring geo folder exists: {geo_output_dir}")
     
     # Copy images to local folder
     if all_images:
         print("Copying images for local newsletter...")
         copy_images_for_local_newsletter(all_images, project_root)
     
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"newsletter_{geo}_{lang}_{timestamp}.html"
-    filepath = os.path.join(output_dir, filename)
+    # Format: newsletter_{geo}-{lang}_{date}_{time}.html (e.g., newsletter_ca-en_080625_221315.html)
+    now = datetime.now()
+    date_str = now.strftime('%m%d%y')  # MMDDYY format
+    time_str = now.strftime('%H%M%S')  # HHMMSS format
+    filename = f"newsletter_{geo}-{lang}_{date_str}_{time_str}.html"
+    filepath = os.path.join(geo_output_dir, filename)
     
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        print(f"Local newsletter saved: {filename}")
-        return filename
+        print(f"Local newsletter saved: {geo}/{filename}")
+        return f"{geo}/{filename}"
     except Exception as e:
         print(f"Error saving local newsletter: {e}")
         return None
@@ -258,39 +336,78 @@ def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, projec
     """Generates a newsletter for a specific geo and language with translation, local saving, and Mailchimp upload."""
     print(f"\n=== Generating newsletter for {geo}-{lang} ===")
     
-    # Get base context
-    context, resolved_geo = get_newsletter_context(data, geo, lang)
-    if not context:
-        print(f"Error: Could not build context for geo '{geo}-{lang}'. Skipping.")
-        return
+    # Build context from form_data if provided
+    if form_data:
+        print(f"Building context from form data...")
+        
+        # Find the country name for metadata
+        country_name = None
+        for country, country_data in data.items():
+            if country != 'global' and country_data.get('languages'):
+                # Find the country that matches our geo
+                geo_mapping = {
+                    'us': 'United States', 'ca': 'Canada', 'mx': 'Mexico', 'br': 'Brazil',
+                    'ch': 'Chile', 'ar': 'Argentina', 'co': 'Colombia', 'pe': 'Peru'
+                }
+                if geo_mapping.get(geo) == country:
+                    country_name = country
+                    break
+        
+        context = {
+            'global': data['global'],
+            'metadata': {
+                'country_name': country_name or geo.upper()
+            },
+            'hero': {
+                'image_url': form_data['hero']['image'],
+                'image_alt': form_data['hero'].get('imageAlt', ''),
+                'headline': form_data['hero'].get('headline', ''),
+                'description': form_data['hero'].get('description', ''),
+                'cta_learn_more_url': form_data['hero'].get('learnMoreUrl', ''),
+                'ctas_buttons': [{'text': cta['text'], 'url': cta['url']} for cta in form_data.get('ctas', [])]
+            },
+            'stories': [{
+                'image_url': story['image'],
+                'image_alt': story.get('imageAlt', ''),
+                'headline': story.get('headline', ''),
+                'description': story.get('description', ''),
+                'url': story['url']
+            } for story in form_data.get('stories', [])]
+        }
+    else:
+        # Fallback to old method
+        context, resolved_geo = get_newsletter_context(data, geo, lang)
+        if not context:
+            print(f"Error: Could not build context for geo '{geo}-{lang}'. Skipping.")
+            return
 
-    # --- Apply translations if form_data is provided ---
+    # --- Apply translations if needed ---
     if form_data and lang != 'en':
         print(f"Translating content to {lang}...")
         
         # Translate hero content
         if 'hero' in context:
-            if 'image_alt' in context['hero']:
+            if context['hero'].get('image_alt'):
                 context['hero']['image_alt'] = translate_text(context['hero']['image_alt'], lang)
-            if 'headline' in context['hero']:
+            if context['hero'].get('headline'):
                 context['hero']['headline'] = translate_text(context['hero']['headline'], lang)
-            if 'description' in context['hero']:
+            if context['hero'].get('description'):
                 context['hero']['description'] = translate_text(context['hero']['description'], lang)
             
             # Translate CTA buttons
             if 'ctas_buttons' in context['hero']:
                 for cta in context['hero']['ctas_buttons']:
-                    if 'text' in cta:
+                    if cta.get('text'):
                         cta['text'] = translate_text(cta['text'], lang)
         
         # Translate stories content
         if 'stories' in context:
             for story in context['stories']:
-                if 'image_alt' in story:
+                if story.get('image_alt'):
                     story['image_alt'] = translate_text(story['image_alt'], lang)
-                if 'headline' in story:
+                if story.get('headline'):
                     story['headline'] = translate_text(story['headline'], lang)
-                if 'description' in story:
+                if story.get('description'):
                     story['description'] = translate_text(story['description'], lang)
 
     # --- Validate brand folder exists ---
@@ -312,61 +429,13 @@ def generate_newsletter_for_geo_lang(geo, lang, data, successful_uploads, projec
     print("Saving local newsletter...")
     local_filename = save_local_newsletter(html_content, geo, lang, project_root, all_images)
     
-    # --- Prepare for Mailchimp upload ---
-    html_for_mailchimp = html_content
-    try:
-        
-        if all_images:
-            # Upload all images and build URL mapping
-            url_mappings = {}  # Maps relative_path to mailchimp_url
-            
-            for relative_path, full_path in all_images:
-                print(f"Processing image: {relative_path}")
-                compressed_path = compress_image_if_needed(full_path)
-                mailchimp_url = upload_image_to_mailchimp(compressed_path)
-                url_mappings[relative_path] = mailchimp_url
-                print(f"Uploaded: {relative_path} -> {mailchimp_url}")
-            
-            # Replace URLs in HTML for Mailchimp
-            print("Replacing image URLs for Mailchimp...")
-            all_possible_urls = []
-            for relative_path, mailchimp_url in url_mappings.items():
-                # Generate all possible URL variants for this image
-                variants = [
-                    f"./{relative_path}",  # ./images/brand/HRF-Logo.png
-                    f"/{relative_path}",   # /images/brand/HRF-Logo.png  
-                    relative_path,         # images/brand/HRF-Logo.png
-                ]
-                for variant in variants:
-                    all_possible_urls.append((variant, mailchimp_url))
-            
-            # Sort by URL length (longest first) to avoid partial matches
-            all_possible_urls.sort(key=lambda x: len(x[0]), reverse=True)
-            
-            # Replace URLs in the HTML
-            for local_url, mailchimp_url in all_possible_urls:
-                if local_url in html_for_mailchimp:
-                    html_for_mailchimp = html_for_mailchimp.replace(local_url, mailchimp_url)
-                    print(f"Replaced '{local_url}' with Mailchimp URL")
-
-    except (MailchimpImageUploadError, Exception) as e:
-        print(f"ERROR: Failed during image processing for geo '{geo}-{lang}'.")
-        print(f"Reason: {e}")
-        sys.exit(1)
-
-    # --- Upload to Mailchimp with improved naming ---
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    template_name = f"newsletter_{geo}_{lang}_{timestamp}"
-    try:
-        print(f"Uploading to Mailchimp: {template_name}")
-        upload_template_to_mailchimp(html_for_mailchimp, template_name)
-        print(f"Successfully uploaded '{template_name}' to Mailchimp.")
-        successful_uploads.append(template_name)
-        return {'local': local_filename, 'mailchimp': template_name}
-    except MailchimpUploadError as e:
-        print(f"ERROR: Failed to upload newsletter '{template_name}'.")
-        print(f"Reason: {e}")
-        sys.exit(1)
+    # --- MAILCHIMP INTEGRATION TEMPORARILY DISABLED FOR DEBUGGING ---
+    print("\n*** MAILCHIMP INTEGRATION DISABLED - LOCAL ONLY MODE ***")
+    print(f"Local newsletter generation completed for {geo}-{lang}")
+    print(f"Images processed: {len(all_images) if all_images else 0}")
+    
+    # Return only local filename for now
+    return {'local': local_filename, 'mailchimp': None}
 
 # Flask Routes
 @app.route('/')
@@ -436,12 +505,39 @@ def save_credentials():
 @app.route('/api/build-newsletter', methods=['POST'])
 def build_newsletter_api():
     """Generate newsletter with custom content from the build form."""
+    import sys
+    import traceback
+    
     try:
+        print("\n=== API CALL STARTED ===")
+        print("Flask route handler called successfully")
+        sys.stdout.flush()
+        
+        print("About to get JSON data from request...")
+        sys.stdout.flush()
+        print("Getting JSON data from request...")
+        sys.stdout.flush()
+        
         form_data = request.get_json()
+        print(f"Form data received successfully")
+        print(f"Form data type: {type(form_data)}")
+        print(f"Form data keys: {list(form_data.keys()) if form_data else 'None'}")
+        sys.stdout.flush()
+        
+        if not form_data:
+            print("ERROR: No form data received")
+            sys.stdout.flush()
+            return jsonify({'error': 'No form data received'}), 400
+        
         country = form_data.get('country')
+        print(f"Country extracted: {country}")
+        sys.stdout.flush()
         
         if not country:
             return jsonify({'error': 'Country is required'}), 400
+        
+        print(f"Processing country: {country}")
+        sys.stdout.flush()
         
         # Map country to geo code
         geo_mapping = {
@@ -478,16 +574,29 @@ def build_newsletter_api():
         }
         
         geo = geo_mapping.get(country)
+        print(f"Mapped to geo: {geo}")
+        sys.stdout.flush()
+        
         if not geo:
             return jsonify({'error': f'No geo mapping found for country "{country}"'}), 400
         
+        print(f"Getting project root...")
+        sys.stdout.flush()
+        
         # Create custom newsletter data from form input
         project_root = get_project_root()
+        print(f"Project root: {project_root}")
+        sys.stdout.flush()
         
         # Load brand information
         brand_file = os.path.join(project_root, 'data', 'brand_information.json')
+        print(f"Loading brand file: {brand_file}")
+        sys.stdout.flush()
+        
         with open(brand_file, 'r', encoding='utf-8') as f:
             brand_data = json.load(f)
+        print(f"Brand data loaded successfully")
+        sys.stdout.flush()
         
         # Create custom newsletter data with form inputs
         custom_data = {
@@ -519,8 +628,8 @@ def build_newsletter_api():
                 lang_code = lang_info[1]  # Get language code (e.g., 'en', 'fr')
                 lang_name = lang_info[0]  # Get language name (e.g., 'English', 'French')
                 
-                # Add language to the list
-                custom_data[geo]['languages'].append(lang_code)
+                # Add full language info to the list (not just the code)
+                custom_data[geo]['languages'].append([lang_name, lang_code])
                 
                 # Create translation data with form inputs
                 custom_data[geo]['translations'][lang_code] = {
@@ -542,40 +651,71 @@ def build_newsletter_api():
                     } for i, story in enumerate(form_data.get('stories', []))]
                 }
         
+        print(f"\n=== STARTING NEWSLETTER GENERATION ===")
+        print(f"Country: {country}")
+        print(f"Geo: {geo}")
+        print(f"Languages: {custom_data[geo]['languages']}")
+        sys.stdout.flush()
+        
         # Collect user-provided images
-        print(f"Collecting user images for {country} ({geo})...")
+        print(f"\n=== COLLECTING USER IMAGES ===")
         user_images = collect_user_images(form_data, project_root, geo)
+        print(f"User images collected: {len(user_images) if user_images else 0}")
+        sys.stdout.flush()
         
         # Generate newsletters for all languages with translation
         successful_uploads = []
         generation_results = []
+        local_files = []
         
-        print(f"Generating newsletters for {len(custom_data[geo]['languages'])} languages...")
-        for lang in custom_data[geo]['languages']:
+        print(f"\nGenerating newsletters for {len(custom_data[geo]['languages'])} languages...")
+        sys.stdout.flush()
+        
+        for lang_info in custom_data[geo]['languages']:
+            lang_name = lang_info[0]  # e.g., 'English'
+            lang_code = lang_info[1]  # e.g., 'en'
+            
+            print(f"\nGenerating newsletter for {lang_name} ({lang_code})...")
+            sys.stdout.flush()
+            
             result = generate_newsletter_for_geo_lang(
-                geo, lang, custom_data, successful_uploads, project_root, 
-                user_images=user_images, form_data=form_data
+                geo, lang_code, custom_data, successful_uploads, project_root, user_images, form_data
             )
-            if result:
+            
+            if result and result.get('local'):
+                local_files.append(result['local'])
                 generation_results.append(result)
+                print(f"Successfully generated: {result['local']}")
+            else:
+                print(f"Failed to generate newsletter for {lang_name}")
+            
+            sys.stdout.flush()
         
-        # Clean up temporary images
-        temp_dir = os.path.join(project_root, 'temp_images')
-        if os.path.exists(temp_dir):
-            try:
-                shutil.rmtree(temp_dir)
-                print("Cleaned up temporary images")
-            except Exception as e:
-                print(f"Warning: Could not clean up temp images: {e}")
+        print(f"\n=== GENERATION COMPLETE ===")
+        print(f"Local files generated: {local_files}")
+        print(f"Total files: {len(local_files)}")
+        sys.stdout.flush()
         
         return jsonify({
             'success': True,
-            'templates': successful_uploads,
-            'message': f'Successfully generated {len(successful_uploads)} newsletter templates'
+            'local_files': local_files,
+            'message': f'Successfully generated {len(local_files)} local newsletter files',
+            'debug_info': {
+                'user_images_collected': len(user_images) if user_images else 0,
+                'languages_processed': len(local_files),
+                'geo': geo,
+                'country': country
+            }
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"\n=== EXCEPTION IN API CALL ===")
+        print(f"Error in build_newsletter_api: {e}")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Traceback: {traceback.format_exc()}")
+        print(f"=== END EXCEPTION ===")
+        sys.stdout.flush()
+        return jsonify({'error': f'Newsletter generation failed: {str(e)}'}), 500
 
 @app.route('/api/generate-newsletter', methods=['POST'])
 def generate_newsletter_api():
