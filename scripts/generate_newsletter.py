@@ -201,21 +201,22 @@ def collect_user_images(form_data, project_root, geo):
     print(f"Total user images collected: {len(user_images)}")
     return user_images
 
-def copy_images_for_local_newsletter(all_images, project_root):
-    """Copy all images to the generated_newsletters folder for local viewing."""
-    output_dir = os.path.join(project_root, 'generated_newsletters')
+def copy_images_for_local_newsletter(all_images, project_root, geo):
+    """Copy all images to the generated_newsletters/{geo} folder for local viewing."""
+    # Copy images to geo-specific folder
+    geo_output_dir = os.path.join(project_root, 'generated_newsletters', geo)
     copied_images = {}
     
     for relative_path, full_path in all_images:
         if os.path.exists(full_path):
-            # Create destination path in generated_newsletters
-            dest_path = os.path.join(output_dir, relative_path)
+            # Create destination path in generated_newsletters/{geo}
+            dest_path = os.path.join(geo_output_dir, relative_path)
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
             
             try:
                 shutil.copy2(full_path, dest_path)
                 copied_images[relative_path] = dest_path
-                print(f"Copied image: {relative_path}")
+                print(f"Copied image to {geo}: {relative_path}")
             except Exception as e:
                 print(f"Error copying image {relative_path}: {e}")
         else:
@@ -233,7 +234,7 @@ def save_local_newsletter(html_content, geo, lang, project_root, all_images=None
     # Copy images to local folder
     if all_images:
         print("Copying images for local newsletter...")
-        copy_images_for_local_newsletter(all_images, project_root)
+        copy_images_for_local_newsletter(all_images, project_root, geo)
     
     # Format: newsletter_{geo}-{lang}_{date}_{time}.html (e.g., newsletter_ca-en_080625_221315.html)
     now = datetime.now()
