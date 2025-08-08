@@ -22,5 +22,59 @@
     "html_hash": "51163745986c9011",
     "upload_time": "2025-08-07T23:00:50.510028",
     "html_size_bytes": 3394
+  },
+  "Switzerland_de_de-CH_20250808_102209": {
+    "template_id": 11794497,
+    "html_hash": "09db83bb8f4ca6ac",
+    "upload_time": "2025-08-08T10:22:44.732122",
+    "html_size_bytes": 1263930
+  },
+  "Ivory_Coast_en_en-CI_20250808_103007": {
+    "template_id": 11794498,
+    "html_hash": "04c5fcd7a3c77ca6",
+    "upload_time": "2025-08-08T10:30:09.325542",
+    "html_size_bytes": 1263958
+  },
+  "Ivory_Coast_fr_fr-CI_20250808_103009": {
+    "template_id": 11794499,
+    "html_hash": "7700cbd5fd0c5162",
+    "upload_time": "2025-08-08T10:30:10.962752",
+    "html_size_bytes": 1263969
+  },
+  "Switzerland_de_de-CH_20250808_135132": {
+    "template_id": 11794500,
+    "html_hash": "c2f1e7e961b37b43",
+    "upload_time": "2025-08-08T13:51:33.202061",
+    "html_size_bytes": 4507
+  },
+  "Switzerland_fr_fr-CH_20250808_135133": {
+    "template_id": 11794501,
+    "html_hash": "291b4dd9a54df095",
+    "upload_time": "2025-08-08T13:51:34.026592",
+    "html_size_bytes": 4496
+  },
+  "Central_African_Republic_en_en-CF_20250808_135753": {
+    "template_id": 11794502,
+    "html_hash": "7904ca9d605b9402",
+    "upload_time": "2025-08-08T13:57:55.080268",
+    "html_size_bytes": 1263575
+  },
+  "Central_African_Republic_fr_fr-CF_20250808_135755": {
+    "template_id": 11794503,
+    "html_hash": "af5f7c2e8d37414e",
+    "upload_time": "2025-08-08T13:57:56.507437",
+    "html_size_bytes": 1263674
+  },
+  "Switzerland_de_de-CH_20250808_140522": {
+    "template_id": 11794504,
+    "html_hash": "0f588dd113de64d5",
+    "upload_time": "2025-08-08T14:05:24.271432",
+    "html_size_bytes": 1263262
+  },
+  "Switzerland_fr_fr-CH_20250808_140524": {
+    "template_id": 11794505,
+    "html_hash": "e5d63c2f4cc52fba",
+    "upload_time": "2025-08-08T14:05:26.014856",
+    "html_size_bytes": 1263287
   }
 }

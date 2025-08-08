@@ -254,7 +254,11 @@ def save_local_newsletter(html_content, country_code, lang, project_root, all_im
     
     # Use locale if provided, otherwise fallback to country_code-lang
     file_identifier = locale if locale else f"{country_code}-{lang}"
-    filename = f"newsletter_{file_identifier}_{date_str}_{time_str}.html"
+    
+    # Sanitize filename to remove invalid characters for Windows
+    import re
+    safe_file_identifier = re.sub(r'[<>:"/\\|?*]', '_', file_identifier)
+    filename = f"newsletter_{safe_file_identifier}_{date_str}_{time_str}.html"
     filepath = os.path.join(country_output_dir, filename)
     
     try:
@@ -817,12 +821,14 @@ def build_newsletter_api():
         
         # --- OPTIMIZED MAILCHIMP IMAGE UPLOAD (ONCE PER COUNTRY) ---
         mailchimp_url_mappings = {}
+        print(f"\n🚀 Starting optimized Mailchimp image upload (once per country)...")
+        sys.stdout.flush()
+        
         try:
-            print(f"\n🚀 Starting optimized Mailchimp image upload (once per country)...")
-            
             # Collect all images (brand + user-provided)
             all_images = find_all_images_to_upload(project_root, user_images)
             print(f"Found {len(all_images)} total images for processing")
+            sys.stdout.flush()
             
             if all_images:
                 # Extract just the file paths from the (relative_path, full_path) tuples
@@ -843,6 +849,9 @@ def build_newsletter_api():
                         usage_contexts[full_path] = 'inline'
                         priorities[full_path] = 'normal'
                 
+                print(f"📤 Uploading {len(image_paths)} images to Mailchimp...")
+                sys.stdout.flush()
+                
                 # Use our optimized batch upload system
                 import asyncio
                 upload_summary = asyncio.run(upload_images_for_newsletter(
@@ -857,6 +866,7 @@ def build_newsletter_api():
                 print(f"   ❌ Failed: {upload_summary.failed_uploads}")
                 print(f"   ⏱️  Time: {upload_summary.total_time_seconds:.2f}s")
                 print(f"   🔗 URL Mappings: {len(upload_summary.url_mappings)}")
+                sys.stdout.flush()
                 
                 # Store URL mappings for reuse across all languages
                 mailchimp_url_mappings = upload_summary.url_mappings
@@ -867,14 +877,17 @@ def build_newsletter_api():
                         print(f"     - {error}")
                     if len(upload_summary.errors) > 3:
                         print(f"     ... and {len(upload_summary.errors) - 3} more")
+                    sys.stdout.flush()
                 
             else:
                 print("ℹ️  No images to upload to Mailchimp")
+                sys.stdout.flush()
                 
         except Exception as e:
             print(f"❌ Mailchimp image upload failed: {e}")
             import traceback
             print(f"📋 Traceback: {traceback.format_exc()}")
+            sys.stdout.flush()
         
         # Generate newsletters for all languages with translation
         successful_uploads = []

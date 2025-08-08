@@ -106,8 +106,8 @@ class BatchTemplateUploader:
         if not html_content or not html_content.strip():
             return False, "HTML content is empty"
         
-        if len(html_content) > 1_000_000:  # 1MB limit for templates
-            return False, f"HTML content too large: {len(html_content)} bytes (max 1MB)"
+        if len(html_content) > 10_000_000:  # 10MB limit for HTML templates
+            return False, f"HTML content too large: {len(html_content)} bytes (max 10MB)"
         
         # Check for basic HTML structure
         if '<html' not in html_content.lower():
