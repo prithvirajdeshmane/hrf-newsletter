@@ -76,5 +76,47 @@
     "html_hash": "e5d63c2f4cc52fba",
     "upload_time": "2025-08-08T14:05:26.014856",
     "html_size_bytes": 1263287
+  },
+  "Switzerland_de_de-CH_20250808_142651": {
+    "template_id": 11794506,
+    "html_hash": "8919fab84a36f482",
+    "upload_time": "2025-08-08T14:26:52.624517",
+    "html_size_bytes": 4241
+  },
+  "Switzerland_fr_fr-CH_20250808_142652": {
+    "template_id": 11794507,
+    "html_hash": "8bbe66dbecaff7ea",
+    "upload_time": "2025-08-08T14:26:53.460613",
+    "html_size_bytes": 4229
+  },
+  "Switzerland_de_de-CH_20250808_143005": {
+    "template_id": 11794508,
+    "html_hash": "8919fab84a36f482",
+    "upload_time": "2025-08-08T14:30:05.925783",
+    "html_size_bytes": 4241
+  },
+  "Switzerland_fr_fr-CH_20250808_143005": {
+    "template_id": 11794509,
+    "html_hash": "8bbe66dbecaff7ea",
+    "upload_time": "2025-08-08T14:30:06.944656",
+    "html_size_bytes": 4229
+  },
+  "Switzerland_de_de-CH_20250808_143517": {
+    "template_id": 11794510,
+    "html_hash": "dad73973b73407c1",
+    "upload_time": "2025-08-08T14:35:18.532453",
+    "html_size_bytes": 4315
+  },
+  "Switzerland_fr_fr-CH_20250808_143518": {
+    "template_id": 11794511,
+    "html_hash": "6b73a9c7e6cee203",
+    "upload_time": "2025-08-08T14:35:19.358202",
+    "html_size_bytes": 4303
+  },
+  "Germany_de_de-DE_20250808_145111": {
+    "template_id": 11794512,
+    "html_hash": "4efd1f0423f406c2",
+    "upload_time": "2025-08-08T14:51:13.405264",
+    "html_size_bytes": 1263673
   }
 }
