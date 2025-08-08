@@ -24,6 +24,7 @@ if sys.platform.startswith('win'):
 from mailchimp_template_upload import upload_template_to_mailchimp, MailchimpUploadError
 from mailchimp_image_upload import upload_image_to_mailchimp, MailchimpImageUploadError
 from image_utils import compress_image_if_needed
+from batch_image_upload import upload_images_for_newsletter, replace_image_urls_in_html
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -345,7 +346,7 @@ def get_newsletter_context(data, geo, lang):
 
     return final_data, f"{geo}-{lang}"
 
-def generate_newsletter_for_geo_lang(country_code, lang, data, successful_uploads, project_root, user_images=None, form_data=None, locale=None, folder_name=None, content_country_name=None):
+async def generate_newsletter_for_geo_lang(country_code, lang, data, successful_uploads, project_root, user_images=None, form_data=None, locale=None, folder_name=None, content_country_name=None, mailchimp_url_mappings=None):
     try:
         print(f"Generating newsletter for {country_code} in {lang}")
         
@@ -470,17 +471,17 @@ def generate_newsletter_for_geo_lang(country_code, lang, data, successful_upload
         all_images = find_all_images_to_upload(project_root, user_images)
         print(f"Found {len(all_images)} total images for processing")
         
+        # --- Replace image URLs with Mailchimp URLs if available ---
+        if mailchimp_url_mappings:
+            print("Replacing local image URLs with Mailchimp URLs...")
+            html_content = replace_image_urls_in_html(html_content, mailchimp_url_mappings)
+        
         # --- Save local copy with images ---
         print("Saving local newsletter...")
         local_filename = save_local_newsletter(html_content, country_code, lang, project_root, all_images, locale, file_folder_name)
         
-        # --- MAILCHIMP INTEGRATION TEMPORARILY DISABLED FOR DEBUGGING ---
-        print("\n*** MAILCHIMP INTEGRATION DISABLED - LOCAL ONLY MODE ***")
-        print(f"Local newsletter generation completed for {country_code}-{lang}")
-        print(f"Images processed: {len(all_images) if all_images else 0}")
-        
-        # Return only local filename for now
-        return {'local': local_filename, 'mailchimp': None}
+        print(f"\n✅ Newsletter generation completed for {country_code}-{lang}")
+        return {'local': local_filename}
 
     except Exception as e:
         print(f"\n=== EXCEPTION IN generate_newsletter_for_geo_lang ===")
@@ -813,6 +814,67 @@ def build_newsletter_api():
         print(f"User images collected: {len(user_images) if user_images else 0}")
         sys.stdout.flush()
         
+        # --- OPTIMIZED MAILCHIMP IMAGE UPLOAD (ONCE PER COUNTRY) ---
+        mailchimp_url_mappings = {}
+        try:
+            print(f"\n🚀 Starting optimized Mailchimp image upload (once per country)...")
+            
+            # Collect all images (brand + user-provided)
+            all_images = find_all_images_to_upload(project_root, user_images)
+            print(f"Found {len(all_images)} total images for processing")
+            
+            if all_images:
+                # Extract just the file paths from the (relative_path, full_path) tuples
+                image_paths = [full_path for relative_path, full_path in all_images]
+                
+                # Create usage context mapping (hero, inline, etc.)
+                usage_contexts = {}
+                priorities = {}
+                
+                for relative_path, full_path in all_images:
+                    if 'hero' in relative_path.lower():
+                        usage_contexts[full_path] = 'hero'
+                        priorities[full_path] = 'critical'
+                    elif 'brand' in relative_path.lower():
+                        usage_contexts[full_path] = 'footer'
+                        priorities[full_path] = 'important'
+                    else:
+                        usage_contexts[full_path] = 'inline'
+                        priorities[full_path] = 'normal'
+                
+                # Use our optimized batch upload system
+                import asyncio
+                upload_summary = asyncio.run(upload_images_for_newsletter(
+                    image_paths, 
+                    usage_contexts=usage_contexts,
+                    priorities=priorities
+                ))
+                
+                print(f"📊 Batch Upload Results:")
+                print(f"   ✅ Successful: {upload_summary.successful_uploads}")
+                print(f"   💾 Cached: {upload_summary.cached_hits}")
+                print(f"   ❌ Failed: {upload_summary.failed_uploads}")
+                print(f"   ⏱️  Time: {upload_summary.total_time_seconds:.2f}s")
+                print(f"   🔗 URL Mappings: {len(upload_summary.url_mappings)}")
+                
+                # Store URL mappings for reuse across all languages
+                mailchimp_url_mappings = upload_summary.url_mappings
+                
+                if upload_summary.errors:
+                    print("⚠️  Upload Errors:")
+                    for error in upload_summary.errors[:3]:  # Show first 3 errors
+                        print(f"     - {error}")
+                    if len(upload_summary.errors) > 3:
+                        print(f"     ... and {len(upload_summary.errors) - 3} more")
+                
+            else:
+                print("ℹ️  No images to upload to Mailchimp")
+                
+        except Exception as e:
+            print(f"❌ Mailchimp image upload failed: {e}")
+            import traceback
+            print(f"📋 Traceback: {traceback.format_exc()}")
+        
         # Generate newsletters for all languages with translation
         successful_uploads = []
         generation_results = []
@@ -831,9 +893,10 @@ def build_newsletter_api():
             print(f"Using country name: {preferred_name}")
             sys.stdout.flush()
             
-            result = generate_newsletter_for_geo_lang(
-                country_code, lang_code, custom_data, successful_uploads, project_root, user_images, form_data, locale, country, preferred_name
-            )
+            import asyncio
+            result = asyncio.run(generate_newsletter_for_geo_lang(
+                country_code, lang_code, custom_data, successful_uploads, project_root, user_images, form_data, locale, country, preferred_name, mailchimp_url_mappings
+            ))
             
             if result and result.get('local'):
                 local_files.append(result['local'])
