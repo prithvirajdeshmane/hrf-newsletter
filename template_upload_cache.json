@@ -1,0 +1,26 @@
+{
+  "Switzerland_de_de-CH_20250807_224943": {
+    "template_id": 11794492,
+    "html_hash": "c2a2aab6ab34b0d2",
+    "upload_time": "2025-08-07T22:49:45.189195",
+    "html_size_bytes": 1444
+  },
+  "Switzerland_fr_fr-CH_20250807_224945": {
+    "template_id": 11794493,
+    "html_hash": "a51229ca99fecab3",
+    "upload_time": "2025-08-07T22:49:46.114403",
+    "html_size_bytes": 1441
+  },
+  "Ivory_Coast_en_en-CI_20250807_230048": {
+    "template_id": 11794494,
+    "html_hash": "f9bbe3ff7a88eaf2",
+    "upload_time": "2025-08-07T23:00:49.507450",
+    "html_size_bytes": 3385
+  },
+  "Ivory_Coast_fr_fr-CI_20250807_230049": {
+    "template_id": 11794495,
+    "html_hash": "51163745986c9011",
+    "upload_time": "2025-08-07T23:00:50.510028",
+    "html_size_bytes": 3394
+  }
+}

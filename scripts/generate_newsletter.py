@@ -25,6 +25,7 @@ from mailchimp_template_upload import upload_template_to_mailchimp, MailchimpUpl
 from mailchimp_image_upload import upload_image_to_mailchimp, MailchimpImageUploadError
 from image_utils import compress_image_if_needed
 from batch_image_upload import upload_images_for_newsletter, replace_image_urls_in_html
+from batch_template_upload import upload_templates_for_newsletter
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -481,7 +482,7 @@ async def generate_newsletter_for_geo_lang(country_code, lang, data, successful_
         local_filename = save_local_newsletter(html_content, country_code, lang, project_root, all_images, locale, file_folder_name)
         
         print(f"\n✅ Newsletter generation completed for {country_code}-{lang}")
-        return {'local': local_filename}
+        return {'local': local_filename, 'html_content': html_content}
 
     except Exception as e:
         print(f"\n=== EXCEPTION IN generate_newsletter_for_geo_lang ===")
@@ -879,6 +880,7 @@ def build_newsletter_api():
         successful_uploads = []
         generation_results = []
         local_files = []
+        newsletter_templates = []  # Store (html_content, country, language_code, locale) for template upload
         
         print(f"\nGenerating newsletters for {len(custom_data[country_code]['languages'])} languages...")
         sys.stdout.flush()
@@ -902,10 +904,66 @@ def build_newsletter_api():
                 local_files.append(result['local'])
                 generation_results.append(result)
                 print(f"Successfully generated: {result['local']}")
+                
+                # Store HTML content for template upload if available
+                if result.get('html_content'):
+                    newsletter_templates.append((
+                        result['html_content'],
+                        country,
+                        lang_code,
+                        locale
+                    ))
+                    print(f"📄 HTML content stored for template upload: {lang_name}")
+                
             else:
                 print(f"Failed to generate newsletter for {lang_name}")
             
             sys.stdout.flush()
+        
+        # --- OPTIMIZED MAILCHIMP TEMPLATE UPLOAD (AFTER ALL NEWSLETTERS GENERATED) ---
+        template_upload_results = None
+        try:
+            if newsletter_templates:
+                print(f"\n📤 Starting batch template upload for {len(newsletter_templates)} language versions...")
+                
+                import asyncio
+                template_summary = asyncio.run(upload_templates_for_newsletter(newsletter_templates))
+                
+                print(f"📊 Template Upload Results:")
+                print(f"   ✅ Successful: {template_summary.successful_uploads}")
+                print(f"   ❌ Failed: {template_summary.failed_uploads}")
+                print(f"   ⏱️  Time: {template_summary.total_time_seconds:.2f}s")
+                print(f"   📋 Template IDs: {len(template_summary.template_ids)}")
+                
+                if template_summary.template_ids:
+                    print(f"🔗 Mailchimp Template IDs:")
+                    for template_name, template_id in template_summary.template_ids.items():
+                        print(f"   {template_name} -> {template_id}")
+                
+                template_upload_results = {
+                    'template_summary': template_summary,
+                    'templates_uploaded': template_summary.successful_uploads,
+                    'total_templates': template_summary.total_templates,
+                    'success_rate': (template_summary.successful_uploads / template_summary.total_templates * 100) if template_summary.total_templates > 0 else 0,
+                    'template_ids': template_summary.template_ids
+                }
+                
+                if template_summary.errors:
+                    print("⚠️  Template Upload Errors:")
+                    for error in template_summary.errors[:3]:  # Show first 3 errors
+                        print(f"     - {error}")
+                    if len(template_summary.errors) > 3:
+                        print(f"     ... and {len(template_summary.errors) - 3} more")
+                        
+            else:
+                print("ℹ️  No newsletter templates to upload to Mailchimp")
+                template_upload_results = {'message': 'No templates to upload'}
+                
+        except Exception as e:
+            print(f"❌ Mailchimp template upload failed: {e}")
+            import traceback
+            print(f"📋 Traceback: {traceback.format_exc()}")
+            template_upload_results = {'error': str(e)}
         
         print(f"\n=== GENERATION COMPLETE ===")
         print(f"Local files generated: {local_files}")
@@ -916,6 +974,11 @@ def build_newsletter_api():
             'success': True,
             'local_files': local_files,
             'message': f'Successfully generated {len(local_files)} local newsletter files',
+            'mailchimp_images': {
+                'images_uploaded': len(mailchimp_url_mappings),
+                'url_mappings': len(mailchimp_url_mappings)
+            },
+            'mailchimp_templates': template_upload_results,
             'debug_info': {
                 'user_images_collected': len(user_images) if user_images else 0,
                 'languages_processed': len(local_files),
