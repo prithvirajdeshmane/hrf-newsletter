@@ -837,8 +837,12 @@ def build_newsletter_api():
                 # Create usage context mapping (hero, inline, etc.)
                 usage_contexts = {}
                 priorities = {}
+                relative_path_mappings = {}
                 
                 for relative_path, full_path in all_images:
+                    # Store relative path mapping for URL replacement
+                    relative_path_mappings[full_path] = relative_path
+                    
                     if 'hero' in relative_path.lower():
                         usage_contexts[full_path] = 'hero'
                         priorities[full_path] = 'critical'
@@ -857,7 +861,8 @@ def build_newsletter_api():
                 upload_summary = asyncio.run(upload_images_for_newsletter(
                     image_paths, 
                     usage_contexts=usage_contexts,
-                    priorities=priorities
+                    priorities=priorities,
+                    relative_path_mappings=relative_path_mappings
                 ))
                 
                 print(f"📊 Batch Upload Results:")

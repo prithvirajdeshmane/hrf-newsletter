@@ -192,7 +192,8 @@ class OptimizedImageUploader:
     
     async def process_newsletter_images(self, image_paths: List[str], 
                                       usage_contexts: Optional[Dict[str, str]] = None,
-                                      priorities: Optional[Dict[str, str]] = None) -> BatchUploadSummary:
+                                      priorities: Optional[Dict[str, str]] = None,
+                                      relative_path_mappings: Optional[Dict[str, str]] = None) -> BatchUploadSummary:
         """
         Main entry point for processing newsletter images.
         
@@ -200,6 +201,7 @@ class OptimizedImageUploader:
             image_paths: List of paths to images to upload
             usage_contexts: Optional mapping of image paths to usage contexts
             priorities: Optional mapping of image paths to priorities
+            relative_path_mappings: Optional mapping of full paths to relative paths for URL replacement
             
         Returns:
             BatchUploadSummary with results of the operation
@@ -210,10 +212,14 @@ class OptimizedImageUploader:
         image_assets = []
         for path in image_paths:
             if os.path.exists(path):
+                # Get relative path for URL mapping (if provided)
+                relative_path = relative_path_mappings.get(path) if relative_path_mappings else None
+                
                 asset = ImageAsset(
                     source_path=path,
                     usage_context=usage_contexts.get(path, 'inline') if usage_contexts else 'inline',
-                    priority=priorities.get(path, 'normal') if priorities else 'normal'
+                    priority=priorities.get(path, 'normal') if priorities else 'normal',
+                    original_reference=relative_path
                 )
                 image_assets.append(asset)
             else:
