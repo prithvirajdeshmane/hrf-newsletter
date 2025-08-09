@@ -23,7 +23,7 @@ if sys.platform.startswith('win'):
 # Assuming mailchimp_template_upload, mailchimp_image_upload, and image_utils are in the same directory
 from mailchimp_template_upload import upload_template_to_mailchimp, MailchimpUploadError
 from mailchimp_image_upload import upload_image_to_mailchimp, MailchimpImageUploadError
-from image_utils import compress_image_if_needed
+# compress_image_if_needed import removed - function was unused
 from batch_image_upload import upload_images_for_newsletter, replace_image_urls_in_html
 from batch_template_upload import upload_templates_for_newsletter
 
@@ -309,14 +309,6 @@ def find_all_images_to_upload(project_root, user_images=None):
         print(f"Added {len(user_images)} user-provided images")
     
     return image_files
-
-def find_image_urls_in_html(html_content):
-    """Finds all image src URLs in the rendered HTML content."""
-    import re
-    # Find all src attributes in img tags
-    img_src_pattern = r'<img[^>]+src=["\']([^"\'>]+)["\'][^>]*>'
-    matches = re.findall(img_src_pattern, html_content, re.IGNORECASE)
-    return list(set(matches))  # Return unique URLs
 
 def validate_brand_folder(project_root):
     """Validates that the brand images folder exists."""
@@ -1014,7 +1006,7 @@ def build_newsletter_api():
         sys.stdout.flush()
         return jsonify({'error': f'Newsletter generation failed: {str(e)}'}), 500
 
-# Old generate_newsletter_api function removed - now using build_newsletter_api with new JSON structure
+
 
 def get_project_root():
     """Get the project root directory."""
