@@ -210,12 +210,21 @@ def collect_user_images(form_data, project_root, country_code):
     return user_images
 
 def copy_images_for_local_newsletter(all_images, project_root, folder_name):
-    """Copy all images to the generated_newsletters/{folder_name} folder for local viewing."""
+    """Copy user images to the generated_newsletters/{folder_name} folder for local viewing.
+    
+    Brand images are excluded from copying since they are now referenced from the central
+    images/brand directory to prevent duplication and project bloat.
+    """
     # Copy images to country-specific folder
     country_output_dir = os.path.join(project_root, 'generated_newsletters', folder_name)
     copied_images = {}
     
     for relative_path, full_path in all_images:
+        # Skip brand images - they are now referenced from central location
+        if relative_path.startswith('images/brand/'):
+            print(f"Skipping brand image (referenced from central location): {relative_path}")
+            continue
+            
         if os.path.exists(full_path):
             # Create destination path in generated_newsletters/{country_code}
             dest_path = os.path.join(country_output_dir, relative_path)
@@ -224,7 +233,7 @@ def copy_images_for_local_newsletter(all_images, project_root, folder_name):
             try:
                 shutil.copy2(full_path, dest_path)
                 copied_images[relative_path] = dest_path
-                print(f"Copied image to {folder_name}: {relative_path}")
+                print(f"Copied user image to {folder_name}: {relative_path}")
             except Exception as e:
                 print(f"Error copying image {relative_path}: {e}")
         else:
