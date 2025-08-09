@@ -142,5 +142,17 @@
     "html_hash": "e545a147f383f548",
     "upload_time": "2025-08-09T08:25:41.988236",
     "html_size_bytes": 832454
+  },
+  "Ivory_Coast_en_en-CI_20250809_084333": {
+    "template_id": 11794517,
+    "html_hash": "d52885b9f98e5717",
+    "upload_time": "2025-08-09T08:43:35.696338",
+    "html_size_bytes": 769942
+  },
+  "Ivory_Coast_fr_fr-CI_20250809_084335": {
+    "template_id": 11794518,
+    "html_hash": "31c3dc4698dfae75",
+    "upload_time": "2025-08-09T08:43:37.129868",
+    "html_size_bytes": 770009
   }
 }
