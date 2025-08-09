@@ -315,6 +315,78 @@ def validate_brand_folder(project_root):
     brand_folder = os.path.join(project_root, 'images', 'brand')
     return os.path.exists(brand_folder)
 
+def cleanup_temp_images(project_root, cleanup_enabled=True):
+    """Clean up temporary images after successful newsletter generation to prevent project bloat.
+    
+    Args:
+        project_root: Project root directory
+        cleanup_enabled: Whether to perform cleanup (default: True)
+    
+    Returns:
+        dict: Cleanup summary with files removed and space saved
+    """
+    if not cleanup_enabled:
+        print("🔧 Temp image cleanup is disabled")
+        return {'cleanup_enabled': False, 'files_removed': 0, 'space_saved_mb': 0.0}
+    
+    temp_dir = os.path.join(project_root, 'temp_images')
+    
+    if not os.path.exists(temp_dir):
+        print("ℹ️  No temp_images directory to clean up")
+        return {'cleanup_enabled': True, 'files_removed': 0, 'space_saved_mb': 0.0, 'message': 'No temp directory found'}
+    
+    try:
+        # Calculate space to be saved
+        total_size_bytes = 0
+        files_to_remove = []
+        
+        for filename in os.listdir(temp_dir):
+            file_path = os.path.join(temp_dir, filename)
+            if os.path.isfile(file_path):
+                file_size = os.path.getsize(file_path)
+                total_size_bytes += file_size
+                files_to_remove.append((filename, file_size))
+        
+        space_saved_mb = total_size_bytes / (1024 * 1024)
+        
+        if not files_to_remove:
+            print("ℹ️  temp_images directory is empty")
+            # Remove empty directory
+            os.rmdir(temp_dir)
+            return {'cleanup_enabled': True, 'files_removed': 0, 'space_saved_mb': 0.0, 'message': 'Empty directory removed'}
+        
+        print(f"🧹 Cleaning up temp_images directory...")
+        print(f"   Files to remove: {len(files_to_remove)}")
+        print(f"   Space to save: {space_saved_mb:.2f} MB")
+        
+        # Remove all files
+        for filename, file_size in files_to_remove:
+            file_path = os.path.join(temp_dir, filename)
+            os.remove(file_path)
+            print(f"   ✅ Removed: {filename} ({file_size / 1024:.1f} KB)")
+        
+        # Remove the directory itself
+        os.rmdir(temp_dir)
+        print(f"   ✅ Removed empty temp_images directory")
+        
+        print(f"🎉 Cleanup complete! Saved {space_saved_mb:.2f} MB of disk space")
+        
+        return {
+            'cleanup_enabled': True,
+            'files_removed': len(files_to_remove),
+            'space_saved_mb': round(space_saved_mb, 2),
+            'message': f'Successfully cleaned up {len(files_to_remove)} temporary files'
+        }
+        
+    except Exception as e:
+        print(f"⚠️  Error during temp image cleanup: {e}")
+        return {
+            'cleanup_enabled': True,
+            'files_removed': 0,
+            'space_saved_mb': 0.0,
+            'error': str(e)
+        }
+
 def get_newsletter_context(data, geo, lang):
     """Constructs the final context for a given geo and language, handling all data merging."""
     global_data = data.get('global', {})
@@ -980,6 +1052,12 @@ def build_newsletter_api():
         print(f"Total files: {len(local_files)}")
         sys.stdout.flush()
         
+        # Clean up temporary images after successful generation
+        print(f"\n=== CLEANUP PHASE ===")
+        cleanup_results = cleanup_temp_images(project_root, cleanup_enabled=True)
+        print(f"Cleanup results: {cleanup_results}")
+        sys.stdout.flush()
+        
         return jsonify({
             'success': True,
             'local_files': local_files,
@@ -989,6 +1067,7 @@ def build_newsletter_api():
                 'url_mappings': len(mailchimp_url_mappings)
             },
             'mailchimp_templates': template_upload_results,
+            'cleanup': cleanup_results,
             'debug_info': {
                 'user_images_collected': len(user_images) if user_images else 0,
                 'languages_processed': len(local_files),
