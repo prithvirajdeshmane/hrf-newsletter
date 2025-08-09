@@ -118,5 +118,29 @@
     "html_hash": "4efd1f0423f406c2",
     "upload_time": "2025-08-08T14:51:13.405264",
     "html_size_bytes": 1263673
+  },
+  "Bahrain_en_en-BH_20250809_073426": {
+    "template_id": 11794513,
+    "html_hash": "2b2e9e9e4e215c5f",
+    "upload_time": "2025-08-09T07:34:29.039057",
+    "html_size_bytes": 832391
+  },
+  "Bahrain_ar_ar-BH_20250809_073429": {
+    "template_id": 11794514,
+    "html_hash": "1129a524d1b381a6",
+    "upload_time": "2025-08-09T07:34:30.615085",
+    "html_size_bytes": 832586
+  },
+  "Switzerland_de_de-CH_20250809_082538": {
+    "template_id": 11794515,
+    "html_hash": "5d1169f09e088c81",
+    "upload_time": "2025-08-09T08:25:40.661007",
+    "html_size_bytes": 832420
+  },
+  "Switzerland_fr_fr-CH_20250809_082540": {
+    "template_id": 11794516,
+    "html_hash": "e545a147f383f548",
+    "upload_time": "2025-08-09T08:25:41.988236",
+    "html_size_bytes": 832454
   }
 }
