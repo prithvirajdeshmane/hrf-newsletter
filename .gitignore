@@ -1,3 +1,15 @@
+# Ignore the generated newsletters
+/generated_newsletters/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore virtual environment folders
+.env
+venv
+env
+
 # Byte-compiled / optimized / DLL files
 __pycache__
 *.py[cod]
