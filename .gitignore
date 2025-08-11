@@ -1,10 +1,78 @@
-# Ignore the generated newsletters
+# Ignore generated newsletters
 /generated_newsletters/
 
-# Ignore Python cache files
-scripts/__pycache__
+# Python bytecode/cache
 __pycache__/
+scripts/__pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Virtual environments and environment files
+.env
+.env.*
+venv/
+.venv/
+env/
+.Python
+
+# Distribution/build
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Test/coverage
+htmlcov/
+.tox/
+.nox/
+.coverage*
+.cache
+.pytest_cache/
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Editor/IDE
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Flask static asset cache
+static/cache/
+
+# Logs
+*.log
+
+# Local databases
+*.sqlite3
+*.db
+
+# Backup/temp files
+*~
+*.tmp
+*.temp
+
+# C extensions/objects
+*.so
+*.o
+*.obj
+*.dll
+*.exe
+*.out
 
 # Ignore virtual environment folders
 .env
