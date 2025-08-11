@@ -1,6 +1,9 @@
 from flask import Flask, jsonify, request
 from scripts.DataManager import DataManager
 from scripts.env_utils import credentials_present, save_credentials
+import threading
+import webbrowser
+import os
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -64,6 +67,10 @@ def api_check_credentials():
     """
     return {"hasCredentials": credentials_present()}
 
+def open_browser():
+    webbrowser.open_new("http://127.0.0.1:5000")
+
 if __name__ == "__main__":
-    # Run the Flask development server
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        threading.Timer(1.0, open_browser).start()
     app.run(debug=True)
