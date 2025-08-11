@@ -23,4 +23,4 @@ class DataManager:
         """
         with self.path.open('r', encoding='utf-8') as f:
             data = json.load(f)
-        return list(data.keys())
+        return data

@@ -33,20 +33,9 @@ def index() -> str:
 @app.route("/build-newsletter")
 def build_newsletter() -> str:
     """
-    Endpoint to build a newsletter for a specified country.
-    
-    Query Params:
-        country (str, optional): The country for which to build the newsletter.
-    
-    Returns:
-        str: Confirmation message.
+    Render the build-newsletter.html page. The selected country is read by JS from query string.
     """
-    # Retrieve the country query parameter from the request
-    country = request.args.get('country')
-    if country:
-        # Log the selected country for newsletter building
-        print(country)
-    return "Build Newsletter"
+    return render_template("build-newsletter.html")
 
 from flask import request
 
