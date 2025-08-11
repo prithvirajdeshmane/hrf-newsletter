@@ -1,0 +1,79 @@
+{
+    "United States": {
+      "countryCode": "US",
+      "languages": {
+        "English": {
+          "languageCode": "en",
+          "locale": "en-US"
+        }
+      }
+    },
+    "Germany": {
+      "countryCode": "DE",
+      "languages": {
+        "German": {
+          "languageCode": "de",
+          "locale": "de-DE",
+          "preferredName": "Deutschland"
+        }
+      }
+    },
+    "Switzerland": {
+      "countryCode": "CH",
+      "languages": {
+        "German": {
+          "languageCode": "de",
+          "locale": "de-CH",
+          "preferredName": "Schweiz"
+        },
+        "French": {
+          "languageCode": "fr",
+          "locale": "fr-CH",
+          "preferredName": "Suisse"
+        }
+      }
+    },
+    "Ivory Coast": {
+      "countryCode": "CI",
+      "languages": {
+        "English": {
+          "languageCode": "en",
+          "locale": "en-CI"
+        },
+        "French": {
+          "languageCode": "fr",
+          "locale": "fr-CI",
+          "preferredName": "Côte d'Ivoire"
+        }
+      }
+    },
+    "Central African Republic": {
+      "countryCode": "CF",
+      "languages": {
+        "English": {
+          "languageCode": "en",
+          "locale": "en-CF"
+        },
+        "French": {
+          "languageCode": "fr",
+          "locale": "fr-CF",
+          "preferredName": "République Centrafricaine"
+        }
+      }
+    },
+    "Bahrain": {
+      "countryCode": "BH",
+      "languages": {
+        "English": {
+          "languageCode": "en",
+          "locale": "en-BH"
+        },
+        "Arabic": {
+          "languageCode": "ar",
+          "locale": "ar-BH",
+          "preferredName": "البحرين",
+          "scriptDirection": "rtl"
+        }
+      }
+    }
+  }

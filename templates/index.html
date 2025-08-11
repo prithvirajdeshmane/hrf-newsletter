@@ -1,0 +1,349 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 400px; margin: auto; }
+        label, select, button { display: block; width: 100%; margin-bottom: 20px; }
+        select, button { padding: 8px; font-size: 1em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Newsletter Generator</h1>
+        <form id="newsletter-form" action="/build-newsletter" method="get">
+            <label for="country">Select a Country:</label>
+            <select name="country" id="country">
+                {% for country in countries %}
+                    <option value="{{ country }}">{{ country }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Build Newsletter</button>
+        </form>
+    </div>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRF Newsletter Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            min-width: 400px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: #667eea;
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 600;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal .form-group {
+            text-align: left;
+            margin-bottom: 1rem;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .modal input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .learn-more {
+            margin-top: 1rem;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .learn-more a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .learn-more a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 1rem;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        .languages-display {
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .language-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 4px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">HRF</div>
+        <h1>Newsletter Generator</h1>
+        
+        <form id="newsletterForm">
+            <div class="form-group">
+                <label for="country">Choose your country:</label>
+                <select name="country" id="country" required>
+                    <option value="">Select a country...</option>
+                    {% for country in countries %}
+                        <option value="{{ country }}">{{ country }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn" id="generateBtn">Build Newsletter</button>
+            
+            <div class="loading" id="loadingDiv">
+                <div class="spinner"></div>
+                <span>Generating newsletter...</span>
+            </div>
+        </form>
+    </div>
+
+    <!-- Mailchimp Credentials Modal -->
+    <div id="credentialsModal" class="modal">
+        <div class="modal-content">
+            <h2>Please provide your MailChimp API credentials</h2>
+            
+            <form id="credentialsForm">
+                <div class="form-group">
+                    <label for="apiKey">API Key:</label>
+                    <input type="text" id="apiKey" required placeholder="Enter your Mailchimp API key">
+                </div>
+                
+                <div class="form-group">
+                    <label for="serverPrefix">Server Prefix (eg: us21):</label>
+                    <input type="text" id="serverPrefix" required placeholder="e.g., us21">
+                </div>
+                
+                <button type="submit" class="btn">Save</button>
+                
+                <div class="learn-more">
+                    Learn more at <a href="https://mailchimp.com/help/about-api-keys/" target="_blank">https://mailchimp.com/help/about-api-keys/</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Show credentials modal if creds_ok is false (from Flask)
+    </script>
+    {% if not creds_ok %}
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('credentialsModal').style.display = 'block';
+        });
+    </script>
+    {% endif %}
+    <script>
+        // Handle credentials form submission
+        document.getElementById('credentialsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const apiKey = document.getElementById('apiKey').value;
+            const serverPrefix = document.getElementById('serverPrefix').value;
+            
+            try {
+                const response = await fetch('/api/save-credentials', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        server_prefix: serverPrefix
+                    })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('credentialsModal').style.display = 'none';
+                    // Credentials saved successfully - modal closes silently
+                } else {
+                    const result = await response.json();
+                    const errorMessage = result.error || 'Error saving credentials. Please try again.';
+                    alert(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error saving credentials:', error);
+                alert('Network error. Please check your connection and try again.');
+            }
+        });
+
+        // Handle newsletter building
+        document.getElementById('newsletterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const selectedCountry = document.getElementById('country').value;
+            if (!selectedCountry) {
+                alert('Please select a country');
+                return;
+            }
+            // Navigate to build-newsletter page with only country parameter
+            const params = new URLSearchParams({
+                country: selectedCountry
+            });
+            window.location.href = `/build-newsletter?${params.toString()}`;
+        });
+    </script>
+</body>
+</html>
+
