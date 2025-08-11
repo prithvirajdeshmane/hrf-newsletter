@@ -33,6 +33,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HRF Newsletter Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -236,11 +237,16 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">HRF</div>
-        <h1>Newsletter Generator</h1>
+    <div class="container" style="position: relative;">
+        <a href="#" id="editCredentialsLink"><i class="fa-solid fa-key" style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 1.5rem; color: #ff7f00; cursor: pointer;"></i></a>
+        <img src="{{ url_for('static', filename='images/brand/HRF-Logo.png') }}" alt="HRF Logo" class="logo" style="display: block; margin: 0 auto; width: 200px; height: 200px; object-fit: contain; border-radius: 0%; background: #fff;" />
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h1 style="margin: 0;">Newsletter Generator</h1>
+            
+        </div>
         
         <form id="newsletterForm">
+
             <div class="form-group">
                 <label for="country">Choose your country:</label>
                 <select name="country" id="country" required>
@@ -262,8 +268,11 @@
 
     <!-- Mailchimp Credentials Modal -->
     <div id="credentialsModal" class="modal">
-        <div class="modal-content">
-            <h2>Please provide your MailChimp API credentials</h2>
+        <div class="modal-content" style="position: relative;">
+            {% if creds_ok %}
+            <span id="closeModal" style="position: absolute; top: 1.2rem; right: 1.5rem; font-size: 1.5rem; color: #888; cursor: pointer;" aria-label="Close" role="button">&times;</span>
+            {% endif %}
+            <h2>MailChimp API Credentials</h2>
             
             <form id="credentialsForm">
                 <div class="form-group">
@@ -344,6 +353,23 @@
             window.location.href = `/build-newsletter?${params.toString()}`;
         });
     </script>
+<script>
+    // Open credentials modal on CTA click
+    document.addEventListener('DOMContentLoaded', function() {
+        var link = document.getElementById('editCredentialsLink');
+        if (link) {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                document.getElementById('credentialsModal').style.display = 'block';
+            });
+        }
+        var closeBtn = document.getElementById('closeModal');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                document.getElementById('credentialsModal').style.display = 'none';
+            });
+        }
+    });
+</script>
 </body>
 </html>
-
