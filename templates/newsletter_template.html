@@ -5,49 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ hero.headline }}</title>
     <style>
-        body { margin: 0; padding: 0; background-color: #f4f4f4; }
-        table { border-collapse: collapse; }
-        .wrapper { width: 100%; table-layout: fixed; background-color: #f4f4f4; }
-        .main { margin: 0 auto; width: 100%; max-width: 600px; background-color: #ffffff; border-spacing: 0; font-family: sans-serif; color: #333333; }
-        .hero-img { width: 100%; max-width: 600px; height: auto; }
-        .content { padding: 20px 30px; }
-        h1 { font-size: 24px; margin: 0 0 15px; }
-        p { font-size: 16px; line-height: 1.5; margin: 0 0 15px; }
-        .cta-button { display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; }
-        .story-cell.two-stories { width: 50%; }
-        .footer { background-color: #eeeeee; color: #777777; padding: 20px 30px; text-align: center; font-size: 12px; }
+        /* Mobile-first responsive styles */
+        @media screen and (max-width: 600px) {
+            .story-cell { 
+                display: block !important; 
+                width: 100% !important; 
+                padding: 10px 0 !important; 
+            }
+            .story-table { 
+                width: 100% !important; 
+            }
+            .story-cell img { 
+                max-width: 100% !important; 
+            }
+        }
     </style>
 </head>
-<body>
-    <center class="wrapper">
-        <!-- LOGO BANNER -->
-        <table class="main" width="100%" style="background: #fff; border-bottom: 1px solid #eee; margin: 0 auto;">
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
+    <div style="width: 100%; background-color: #f4f4f4;">
+        <table style="margin: 0 auto; width: 100%; max-width: 600px; background-color: #ffffff; border-spacing: 0; border-bottom: 1px solid #eeeeee;">
             <tr>
-                <td align="center" style="padding: 24px 0 16px 0;">
-                    <img src="{{ global.logo_url }}" alt="Foundation Logo" style="max-width: 200px; width: 100%; height: auto; display: block; margin: 0 auto;">
+                <td style="text-align: center; padding: 24px 0 16px 0;">
+                    <img src="{{ global.logo_url }}" alt="Foundation Logo" style="max-width: 200px; width: auto; height: auto; display: block; margin: 0 auto;">
                 </td>
             </tr>
         </table>
-        <table class="main" width="100%">
-            <!-- HERO SECTION -->
+        
+        <table style="margin: 0 auto; width: 100%; max-width: 600px; background-color: #ffffff; border-spacing: 0; color: #333333;">
             <tr>
-                <td>
-                    <img src="{{ hero.image_url }}" alt="{{ hero.image_alt }}" class="hero-img">
+                <td style="padding: 0;">
+                    <img src="{{ hero.image_url }}" alt="{{ hero.image_alt }}" style="width: 100%; max-width: 600px; height: auto; display: block;">
                 </td>
             </tr>
             <tr>
-                <td class="content">
-                    <h1>{{ hero.headline }}</h1>
-                    <p>{{ hero.description }}</p>
+                <td style="padding: 20px 30px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
+                    <h1 style="font-size: 24px; margin: 0 0 15px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ hero.headline }}</h1>
+                    <p style="font-size: 16px; line-height: 1.5; margin: 0 0 15px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ hero.description }}</p>
+                    
                     {% if hero.cta_learn_more_url %}
-                        <p><a href="{{ hero.cta_learn_more_url }}" style="color: #007bff; font-weight: bold;">Learn More</a></p>
+                        <p style="margin: 15px 0; text-align: center;">
+                            <a href="{{ hero.cta_learn_more_url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">Learn More</a>
+                        </p>
                     {% endif %}
+                    
                     {% if hero.ctas_buttons %}
-                        <table width="100%" style="margin-top: 20px;">
+                        <table style="width: 100%; margin-top: 20px; border-spacing: 0;">
                             <tr>
                                 {% for cta in hero.ctas_buttons %}
-                                    <td align="center" style="padding: 5px;">
-                                        <a href="{{ cta.url }}" class="cta-button">{{ cta.text }}</a>
+                                    <td style="text-align: center; padding: 5px; {% if hero.ctas_buttons|length == 1 %}width: 100%;{% else %}width: 50%;{% endif %}">
+                                        <a href="{{ cta.url }}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; font-size: 16px;">{{ cta.text }}</a>
                                     </td>
                                 {% endfor %}
                             </tr>
@@ -56,40 +62,62 @@
                 </td>
             </tr>
 
-            <!-- FEATURED STORIES -->
             {% if stories %}
                 <tr>
-                    <td class="content">
-                        <table width="100%">
-                            {% for story in stories %}
-                                {% if loop.index0 % 2 == 0 %}<tr>{% endif %}
-                                <td class="story-cell {% if stories|length == 2 %}two-stories{% endif %}" style="padding: 10px; vertical-align: top;">
-                                    <img src="{{ story.image_url }}" alt="{{ story.image_alt }}" style="width:100%; max-width: 270px; height:auto;">
-                                    <h2 style="font-size: 18px; margin: 10px 0 5px;">{{ story.headline }}</h2>
-                                    <p style="margin-bottom: 10px;">{{ story.description }}</p>
-                                    <p><a href="{{ story.url }}" style="color: #007bff; font-weight: bold;">Read Story</a></p>
-                                    {% if story.cta %}
-                                    <p style="margin-top: 10px;">
-                                        <a href="{{ story.cta.url }}" style="background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">{{ story.cta.text }}</a>
-                                    </p>
-                                    {% endif %}
-                                </td>
-                                {% if loop.index0 % 2 == 1 or loop.last %}</tr>{% endif %}
-                            {% endfor %}
-                        </table>
+                    <td style="padding: 20px 30px;">
+                        {% if stories|length == 1 %}
+                            <!-- SINGLE STORY LAYOUT -->
+                            <table style="width: 100%; border-spacing: 0;">
+                                <tr>
+                                    <td style="{% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
+                                        <img src="{{ stories[0].image_url }}" alt="{{ stories[0].image_alt }}" style="width: 100%; max-width: 270px; height: auto; display: block; margin-bottom: 15px;">
+                                        <h2 style="font-size: 18px; margin: 10px 0 5px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ stories[0].headline }}</h2>
+                                        <p style="margin-bottom: 10px; font-size: 16px; line-height: 1.5; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ stories[0].description }}</p>
+                                        <p style="margin-bottom: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
+                                            <a href="{{ stories[0].url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">Read Story</a>
+                                        </p>
+                                        {% if stories[0].cta %}
+                                        <p style="margin-top: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
+                                            <a href="{{ stories[0].cta.url }}" style="background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 14px;">{{ stories[0].cta.text }}</a>
+                                        </p>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        {% else %}
+                            <!-- TWO STORIES LAYOUT -->
+                            <table class="story-table" style="width: 100%; border-spacing: 0;">
+                                <tr>
+                                    {% for story in stories %}
+                                    <td class="story-cell" style="width: 50%; padding: 10px; vertical-align: top; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
+                                        <img src="{{ story.image_url }}" alt="{{ story.image_alt }}" style="width: 100%; max-width: 270px; height: auto; display: block; margin-bottom: 15px;">
+                                        <h2 style="font-size: 18px; margin: 10px 0 5px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ story.headline }}</h2>
+                                        <p style="margin-bottom: 10px; font-size: 16px; line-height: 1.5; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ story.description }}</p>
+                                        <p style="margin-bottom: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
+                                            <a href="{{ story.url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">Read Story</a>
+                                        </p>
+                                        {% if story.cta %}
+                                        <p style="margin-top: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
+                                            <a href="{{ story.cta.url }}" style="background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 14px;">{{ story.cta.text }}</a>
+                                        </p>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                            </table>
+                        {% endif %}
                     </td>
                 </tr>
             {% endif %}
 
-            <!-- FOOTER -->
             <tr>
-                <td class="footer">
-                    {% if metadata.country_name %}<p style="margin: 0 0 10px; font-weight: bold;">{{ metadata.country_name }}</p>{% endif %}
-                    <p>{{ global.foundation_name }}</p>
-                    <p>{{ global.footer_text }}</p>
+                <td style="background-color: #eeeeee; color: #777777; padding: 20px 30px; text-align: center; font-size: 12px; line-height: 1.4;">
+                    {% if metadata.country_name %}<p style="margin: 0 0 10px 0; font-weight: bold; color: #777777;">{{ metadata.country_name }}</p>{% endif %}
+                    <p style="margin: 0 0 5px 0; color: #777777;">{{ global.foundation_name }}</p>
+                    <p style="margin: 0; color: #777777;">{{ global.footer_text }}</p>
                 </td>
             </tr>
         </table>
-    </center>
+    </div>
 </body>
 </html>

@@ -51,6 +51,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Get image data from input field (returns the URL value)
+    function getImageData(inputId) {
+        const input = document.getElementById(inputId);
+        return input ? input.value.trim() : '';
+    }
+
     function triggerFileInput(fileInputId) {
         document.getElementById(fileInputId).click();
     }
@@ -353,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupUrlValidation('learnMoreUrl', 'learnMoreUrlError');
 
     // Newsletter form submission handler
-    const newsletterForm = document.getElementById('newsletterForm');
+    const newsletterForm = document.getElementById('newsletterBuildForm');
     if (newsletterForm) {
         newsletterForm.addEventListener('submit', async function(e) {
             e.preventDefault();
