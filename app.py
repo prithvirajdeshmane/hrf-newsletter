@@ -38,21 +38,21 @@ def map_story_fields(story: Dict[str, Any]) -> Dict[str, Any]:
         'cta': story.get('cta')  # CTA structure is already correct
     }
 
-def generate_test_templates(form_data: Dict[str, Any]) -> List[str]:
+def generate_newsletter_template(form_data: Dict[str, Any]) -> str:
     """
-    Generate three test template variations using the captured form data.
+    Generate a single newsletter template based on user configuration and inputs.
     
-    Template 1: Hero with 1 CTA, 0 stories
-    Template 2: Hero with 2 CTAs, 1 story with CTA
-    Template 3: Hero with no CTA, 2 stories (mixed CTAs)
+    Only includes elements that the user has actually provided:
+    - Hero section (always present with provided data)
+    - CTAs (only if provided by user)
+    - Stories (only if provided by user, with their actual CTAs)
     
     Args:
         form_data: Captured form data from the user
         
     Returns:
-        List of generated template file paths
+        Path to the generated template file
     """
-    template_files = []
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # Create output directory
@@ -69,8 +69,12 @@ def generate_test_templates(form_data: Dict[str, Any]) -> List[str]:
     with brand_info_path.open('r', encoding='utf-8') as f:
         brand_info = json.load(f)
     
-    # Prepare common template variables
-    common_vars = {
+    # Prepare template variables based on user input
+    hero_ctas = form_data.get('ctas', [])
+    user_stories = form_data.get('stories', [])
+    
+    template_data = {
+        'country': form_data['country'],
         'dir': 'ltr',
         'lang': 'en',
         'metadata': {
@@ -80,95 +84,35 @@ def generate_test_templates(form_data: Dict[str, Any]) -> List[str]:
             'foundation_name': brand_info['foundation_name'],
             'footer_text': brand_info['footer_text'],
             'logo_url': brand_info['logo_url']
-        }
-    }
-    
-    # Fix data structure: move CTAs from root to hero.ctas_buttons
-    hero_ctas = form_data.get('ctas', [])
-    
-    # Template 1: Hero with 1 CTA, 0 stories
-    template1_data = {
-        'country': form_data['country'],
+        },
         'hero': {
             'image_url': form_data['hero'].get('image', ''),
             'image_alt': form_data['hero'].get('imageAlt', ''),
             'headline': form_data['hero'].get('headline', ''),
             'description': form_data['hero'].get('description', ''),
             'cta_learn_more_url': form_data['hero'].get('learnMoreUrl', ''),
-            'ctas_buttons': hero_ctas[:1] if hero_ctas else []
+            'ctas_buttons': hero_ctas  # Include all CTAs provided by user
         },
-        'stories': [],
-        **common_vars
+        'stories': [map_story_fields(story) for story in user_stories]  # Include all stories provided by user
     }
     
-    template1_html = render_template('newsletter_template.html', **template1_data)
-    template1_file = output_dir / f"template1_hero_1cta_0stories_{timestamp}.html"
-    template1_file.write_text(template1_html, encoding='utf-8')
-    template_files.append(str(template1_file))
+    # Generate descriptive filename based on content
+    story_count = len(user_stories)
+    cta_count = len(hero_ctas)
+    filename_parts = [
+        f"newsletter_{country_key}",
+        f"{cta_count}ctas" if cta_count > 0 else "no_ctas",
+        f"{story_count}stories" if story_count > 0 else "no_stories",
+        timestamp
+    ]
+    filename = "_".join(filename_parts) + ".html"
     
-    # Template 2: Hero with 2 CTAs, 1 story with CTA
-    template2_data = {
-        'country': form_data['country'],
-        'hero': {
-            'image_url': form_data['hero'].get('image', ''),
-            'image_alt': form_data['hero'].get('imageAlt', ''),
-            'headline': form_data['hero'].get('headline', ''),
-            'description': form_data['hero'].get('description', ''),
-            'cta_learn_more_url': form_data['hero'].get('learnMoreUrl', ''),
-            'ctas_buttons': hero_ctas[:2] if len(hero_ctas) >= 2 else hero_ctas
-        },
-        'stories': [map_story_fields(story) for story in form_data['stories'][:1]] if form_data['stories'] else [],
-        **common_vars
-    }
+    # Generate and save template
+    template_html = render_template('newsletter_template.html', **template_data)
+    template_file = output_dir / filename
+    template_file.write_text(template_html, encoding='utf-8')
     
-    # Ensure the story has a CTA if available
-    if template2_data['stories'] and form_data['stories']:
-        first_story = form_data['stories'][0]
-        if 'cta' not in first_story and hero_ctas:
-            # Add a CTA to the story if it doesn't have one
-            template2_data['stories'][0]['cta'] = {
-                'text': 'Learn More',
-                'url': first_story.get('url', '#')
-            }
-    
-    template2_html = render_template('newsletter_template.html', **template2_data)
-    template2_file = output_dir / f"template2_hero_2ctas_1story_with_cta_{timestamp}.html"
-    template2_file.write_text(template2_html, encoding='utf-8')
-    template_files.append(str(template2_file))
-    
-    # Template 3: Hero with no CTA, 2 stories (mixed CTAs)
-    template3_data = {
-        'country': form_data['country'],
-        'hero': {
-            'image_url': form_data['hero'].get('image', ''),
-            'image_alt': form_data['hero'].get('imageAlt', ''),
-            'headline': form_data['hero'].get('headline', ''),
-            'description': form_data['hero'].get('description', ''),
-            'cta_learn_more_url': form_data['hero'].get('learnMoreUrl', ''),
-            'ctas_buttons': []  # No CTA buttons for template 3
-        },
-        'stories': [map_story_fields(story) for story in form_data['stories'][:2]] if form_data['stories'] else [],
-        **common_vars
-    }
-    
-    # Ensure mixed CTA scenario: first story has CTA, second doesn't (if we have 2 stories)
-    if len(template3_data['stories']) >= 2:
-        # First story gets a CTA
-        if 'cta' not in template3_data['stories'][0]:
-            template3_data['stories'][0]['cta'] = {
-                'text': 'Take Action',
-                'url': template3_data['stories'][0].get('url', '#')
-            }
-        # Second story has no CTA
-        if 'cta' in template3_data['stories'][1]:
-            del template3_data['stories'][1]['cta']
-    
-    template3_html = render_template('newsletter_template.html', **template3_data)
-    template3_file = output_dir / f"template3_hero_0ctas_2stories_mixed_{timestamp}.html"
-    template3_file.write_text(template3_html, encoding='utf-8')
-    template_files.append(str(template3_file))
-    
-    return template_files
+    return str(template_file)
 
 @app.route('/api/countries')
 def get_countries():
@@ -246,14 +190,14 @@ def api_build_newsletter():
             print(f"\nSTORIES: {form_data.get('stories', [])}")
             print("=" * 60)
         
-        # Generate test templates
-        template_files = generate_test_templates(form_data)
+        # Generate user-specific newsletter template
+        template_file = generate_newsletter_template(form_data)
         
         return jsonify({
             'success': True,
-            'message': f'Successfully generated {len(template_files)} test template variations!',
-            'local_files': template_files,
-            'templates_count': len(template_files)
+            'message': 'Successfully generated newsletter template based on your configuration!',
+            'local_file': template_file,
+            'template_generated': True
         })
         
     except KeyError as e:
