@@ -68,6 +68,11 @@
                                     <h2 style="font-size: 18px; margin: 10px 0 5px;">{{ story.headline }}</h2>
                                     <p style="margin-bottom: 10px;">{{ story.description }}</p>
                                     <p><a href="{{ story.url }}" style="color: #007bff; font-weight: bold;">Read Story</a></p>
+                                    {% if story.cta %}
+                                    <p style="margin-top: 10px;">
+                                        <a href="{{ story.cta.url }}" style="background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">{{ story.cta.text }}</a>
+                                    </p>
+                                    {% endif %}
                                 </td>
                                 {% if loop.index0 % 2 == 1 or loop.last %}</tr>{% endif %}
                             {% endfor %}

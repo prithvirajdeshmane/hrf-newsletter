@@ -102,27 +102,83 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Helper functions for DOM element creation
+    function createElement(tag, className = '', textContent = '') {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (textContent) element.textContent = textContent;
+        return element;
+    }
+
+    function createFormGroup(labelText, inputId, inputType = 'text', placeholder = '', hasError = false) {
+        const group = createElement('div', 'form-group');
+        
+        const label = createElement('label');
+        label.setAttribute('for', inputId);
+        label.textContent = labelText;
+        
+        const input = createElement('input');
+        input.type = inputType;
+        input.id = inputId;
+        input.placeholder = placeholder;
+        
+        group.append(label, input);
+        
+        if (hasError) {
+            const errorDiv = createElement('div', 'error-message');
+            errorDiv.id = `${inputId}Error`;
+            group.appendChild(errorDiv);
+        }
+        
+        return group;
+    }
+
+    function createFileInputGroup(labelText, textInputId, fileInputId, placeholder = '') {
+        const group = createElement('div', 'form-group');
+        
+        const label = createElement('label');
+        label.setAttribute('for', textInputId);
+        label.textContent = labelText;
+        
+        const fileInputGroup = createElement('div', 'file-input-group');
+        
+        const textInput = createElement('input');
+        textInput.type = 'text';
+        textInput.id = textInputId;
+        textInput.placeholder = placeholder;
+        
+        const fileButton = createElement('button', 'file-btn', 'Select File');
+        fileButton.type = 'button';
+        fileButton.setAttribute('onclick', `triggerFileInput('${fileInputId}')`);
+        
+        const fileInput = createElement('input', 'hidden-file-input');
+        fileInput.type = 'file';
+        fileInput.id = fileInputId;
+        fileInput.accept = '.jpg,.jpeg,.png';
+        
+        const errorDiv = createElement('div', 'error-message');
+        errorDiv.id = `${textInputId}Error`;
+        
+        fileInputGroup.append(textInput, fileButton, fileInput);
+        group.append(label, fileInputGroup, errorDiv);
+        
+        return group;
+    }
+
     function generateCtaSections(count) {
         const container = document.getElementById('ctaSections');
         if (!container) return;
         
         container.innerHTML = '';
         for (let i = 1; i <= count; i++) {
-            const ctaHtml = `
-                <div class="cta-section">
-                    <h4>CTA ${i}</h4>
-                    <div class="form-group">
-                        <label for="ctaText${i}">Button Text:</label>
-                        <input type="text" id="ctaText${i}" placeholder="e.g. 'Donate Now', 'Volunteer'">
-                    </div>
-                    <div class="form-group">
-                        <label for="ctaUrl${i}">CTA URL:</label>
-                        <input type="text" id="ctaUrl${i}" placeholder="https://example.com/action">
-                        <div class="error-message" id="ctaUrl${i}Error"></div>
-                    </div>
-                </div>
-            `;
-            container.innerHTML += ctaHtml;
+            const ctaSection = createElement('div', 'cta-section');
+            const title = createElement('h4', '', `CTA ${i}`);
+            
+            const textGroup = createFormGroup('Button Text:', `ctaText${i}`, 'text', "e.g. 'Donate Now', 'Volunteer'");
+            const urlGroup = createFormGroup('CTA URL:', `ctaUrl${i}`, 'text', 'https://example.com/action', true);
+            
+            ctaSection.append(title, textGroup, urlGroup);
+            container.appendChild(ctaSection);
         }
         
         // Setup validation for new CTA URL inputs
@@ -131,50 +187,135 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function createSelectGroup(labelText, selectId, options, defaultValue = '') {
+        const group = createElement('div', 'form-group');
+        
+        const label = createElement('label');
+        label.setAttribute('for', selectId);
+        label.textContent = labelText;
+        
+        const select = createElement('select');
+        select.id = selectId;
+        
+        options.forEach(option => {
+            const optionElement = createElement('option', '', option.text || option);
+            optionElement.value = option.value || option;
+            if (option.value === defaultValue || option === defaultValue) {
+                optionElement.selected = true;
+            }
+            select.appendChild(optionElement);
+        });
+        
+        group.append(label, select);
+        return group;
+    }
+
+    function createCtaSection(i) {
+        const ctaSection = createElement('div');
+        ctaSection.id = `storyCtaSection${i}`;
+        ctaSection.style.display = 'none';
+        
+        const textGroup = createFormGroup('Button Text:', `storyCtaText${i}`, 'text', "e.g. 'Donate', 'Volunteer'");
+        const urlGroup = createFormGroup('CTA URL:', `storyCtaUrl${i}`, 'text', 'https://example.com/action', true);
+        
+        ctaSection.append(textGroup, urlGroup);
+        return ctaSection;
+    }
+
     function generateStorySections(count) {
         const container = document.getElementById('storySections');
         if (!container) return;
         
         container.innerHTML = '';
         for (let i = 1; i <= count; i++) {
-            const storyHtml = `
-                <div class="container-section">
-                    <h3>Story ${i}:</h3>
-                    <div class="form-group">
-                        <label for="storyImage${i}">Story Image (JPG or PNG):</label>
-                        <div class="file-input-group">
-                            <input type="text" id="storyImage${i}" placeholder="Enter image URL or select file">
-                            <button type="button" class="file-btn" onclick="triggerFileInput('storyImageFile${i}')">Select File</button>
-                            <input type="file" id="storyImageFile${i}" class="hidden-file-input" accept=".jpg,.jpeg,.png">
-                        </div>
-                        <div class="error-message" id="storyImage${i}Error"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="storyImageAlt${i}">Image alt:</label>
-                        <input type="text" id="storyImageAlt${i}" placeholder="e.g., 'Community members at a peaceful demonstration'">
-                    </div>
-                    <div class="form-group">
-                        <label for="storyHeadline${i}">Headline:</label>
-                        <input type="text" id="storyHeadline${i}" placeholder="e.g., 'Local Community Stands Up for Justice'">
-                    </div>
-                    <div class="form-group">
-                        <label for="storyDescription${i}">Description:</label>
-                        <input type="text" id="storyDescription${i}" placeholder="e.g., 'Residents organize peaceful protest to demand accountability...'">
-                    </div>
-                    <div class="form-group">
-                        <label for="storyUrl${i}">Story URL:</label>
-                        <input type="text" id="storyUrl${i}" placeholder="https://example.com/story">
-                        <div class="error-message" id="storyUrl${i}Error"></div>
-                    </div>
-                </div>
-            `;
-            container.innerHTML += storyHtml;
+            const storySection = createElement('div', 'container-section');
+            const title = createElement('h3', '', `Story ${i}:`);
+            
+            // Create form groups
+            const imageGroup = createFileInputGroup(
+                'Story Image (JPG or PNG):', 
+                `storyImage${i}`, 
+                `storyImageFile${i}`, 
+                'Enter image URL or select file'
+            );
+            
+            const altGroup = createFormGroup(
+                'Image alt:', 
+                `storyImageAlt${i}`, 
+                'text', 
+                "e.g., 'Community members at a peaceful demonstration'"
+            );
+            
+            const headlineGroup = createFormGroup(
+                'Headline:', 
+                `storyHeadline${i}`, 
+                'text', 
+                "e.g., 'Local Community Stands Up for Justice'"
+            );
+            
+            const descriptionGroup = createFormGroup(
+                'Description:', 
+                `storyDescription${i}`, 
+                'text', 
+                "e.g., 'Residents organize peaceful protest to demand accountability...'"
+            );
+            
+            const urlGroup = createFormGroup(
+                'Story URL:', 
+                `storyUrl${i}`, 
+                'text', 
+                'https://example.com/story', 
+                true
+            );
+            
+            const ctaSelectGroup = createSelectGroup(
+                'CTA button:', 
+                `storyCta${i}`, 
+                [{value: 'No', text: 'No'}, {value: 'Yes', text: 'Yes'}], 
+                'No'
+            );
+            
+            const ctaSection = createCtaSection(i);
+            
+            // Assemble the story section
+            storySection.append(
+                title, 
+                imageGroup, 
+                altGroup, 
+                headlineGroup, 
+                descriptionGroup, 
+                urlGroup, 
+                ctaSelectGroup, 
+                ctaSection
+            );
+            
+            container.appendChild(storySection);
         }
         
         // Setup file inputs and URL validation for new story sections
         for (let i = 1; i <= count; i++) {
             setupFileInput(`storyImage${i}`, `storyImageFile${i}`);
             setupUrlValidation(`storyUrl${i}`, `storyUrl${i}Error`);
+            setupUrlValidation(`storyCtaUrl${i}`, `storyCtaUrl${i}Error`);
+            
+            // Setup CTA dropdown toggle functionality
+            const ctaSelect = document.getElementById(`storyCta${i}`);
+            const ctaSection = document.getElementById(`storyCtaSection${i}`);
+            
+            if (ctaSelect && ctaSection) {
+                ctaSelect.addEventListener('change', function() {
+                    if (this.value === 'Yes') {
+                        ctaSection.style.display = 'block';
+                    } else {
+                        ctaSection.style.display = 'none';
+                        // Clear CTA fields when hiding
+                        const ctaText = document.getElementById(`storyCtaText${i}`);
+                        const ctaUrl = document.getElementById(`storyCtaUrl${i}`);
+                        if (ctaText) ctaText.value = '';
+                        if (ctaUrl) ctaUrl.value = '';
+                    }
+                });
+            }
         }
     }
 
@@ -270,14 +411,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     const description = document.getElementById(`storyDescription${i}`)?.value.trim() || '';
                     const url = document.getElementById(`storyUrl${i}`)?.value.trim() || '';
                     
+                    // Check if story has CTA
+                    const ctaSelect = document.getElementById(`storyCta${i}`);
+                    const hasCta = ctaSelect?.value === 'Yes';
+                    let cta = null;
+                    
+                    if (hasCta) {
+                        const ctaText = document.getElementById(`storyCtaText${i}`)?.value.trim() || '';
+                        const ctaUrl = document.getElementById(`storyCtaUrl${i}`)?.value.trim() || '';
+                        
+                        if (ctaText && ctaUrl) {
+                            cta = { text: ctaText, url: ctaUrl };
+                        }
+                    }
+                    
                     if (imageData && url) {
-                        formData.stories.push({ 
+                        const storyData = { 
                             image: imageData, 
                             imageAlt, 
                             headline, 
                             description, 
                             url 
-                        });
+                        };
+                        
+                        // Add CTA if present
+                        if (cta) {
+                            storyData.cta = cta;
+                        }
+                        
+                        formData.stories.push(storyData);
                     }
                 }
                 
