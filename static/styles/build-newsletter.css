@@ -169,6 +169,17 @@ h4 {
     text-align: center;
     margin-top: 1rem;
     color: #666;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.loading.show {
+    display: block;
+    opacity: 1;
+}
+
+.loading.hide {
+    opacity: 0;
 }
 .spinner {
     display: inline-block;
