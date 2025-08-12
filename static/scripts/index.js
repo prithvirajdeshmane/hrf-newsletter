@@ -1,72 +1,94 @@
-// Scripts for index.html
-// Show credentials modal if creds_ok is false (from Flask)
-// (handled by template logic below)
+// HRF Newsletter Generator - Index Page JavaScript
+// Consolidated script for all index.html functionality
 
-// If creds_ok is false, show modal on DOMContentLoaded
-window.addEventListener('DOMContentLoaded', function() {
-    if (typeof creds_ok !== 'undefined' && !creds_ok) {
-        document.getElementById('credentialsModal').style.display = 'block';
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM element references
+    const newsletterForm = document.getElementById('newsletterForm');
+    const countrySelect = document.getElementById('country');
+    const credentialsModal = document.getElementById('credentialsModal');
+    const credentialsForm = document.getElementById('credentialsForm');
+    const editCredentialsLink = document.getElementById('editCredentialsLink');
+    const closeModal = document.getElementById('closeModal');
+
+    // Check if credentials modal should be shown based on server-side data attribute
+    const showCredentialsModal = document.body.dataset.showCredentialsModal === 'true';
+    if (showCredentialsModal && credentialsModal) {
+        credentialsModal.classList.add('show');
     }
-});
 
-// Handle credentials form submission
-if (document.getElementById('credentialsForm')) {
-    document.getElementById('credentialsForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const apiKey = document.getElementById('apiKey').value;
-        const serverPrefix = document.getElementById('serverPrefix').value;
-        try {
-            const response = await fetch('/api/save-credentials', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    api_key: apiKey,
-                    server_prefix: serverPrefix
-                })
-            });
-            if (response.ok) {
-                document.getElementById('credentialsModal').style.display = 'none';
-                // Credentials saved successfully - modal closes silently
-            } else {
-                const result = await response.json();
-                const errorMessage = result.error || 'Error saving credentials. Please try again.';
-                alert(errorMessage);
+    // Newsletter form submission handler
+    if (newsletterForm) {
+        newsletterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const selectedCountry = countrySelect.value;
+            
+            if (!selectedCountry) {
+                alert('Please select a country');
+                return;
             }
-        } catch (error) {
-            console.error('Error saving credentials:', error);
-            alert('Network error. Please check your connection and try again.');
-        }
-    });
-}
-
-// Handle newsletter building
-if (document.getElementById('newsletterForm')) {
-    document.getElementById('newsletterForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const selectedCountry = document.getElementById('country').value;
-        if (!selectedCountry) {
-            alert('Please select a country');
-            return;
-        }
-        // Navigate to build-newsletter page with only country parameter
-        const params = new URLSearchParams({
-            country: selectedCountry
+            
+            // Navigate to build-newsletter page with country parameter
+            const params = new URLSearchParams({
+                country: selectedCountry
+            });
+            window.location.href = `/build-newsletter?${params.toString()}`;
         });
-        window.location.href = `/build-newsletter?${params.toString()}`;
-    });
-}
+    }
 
-// Open credentials modal on CTA click
-if (document.getElementById('editCredentialsLink')) {
-    document.getElementById('editCredentialsLink').addEventListener('click', function(event) {
-        event.preventDefault();
-        document.getElementById('credentialsModal').style.display = 'block';
+    // Credentials form submission handler
+    if (credentialsForm) {
+        credentialsForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const apiKey = document.getElementById('apiKey').value;
+            const serverPrefix = document.getElementById('serverPrefix').value;
+            
+            try {
+                const response = await fetch('/api/save-credentials', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        server_prefix: serverPrefix
+                    })
+                });
+                
+                if (response.ok) {
+                    credentialsModal.classList.remove('show');
+                    alert('Credentials saved successfully!');
+                } else {
+                    const result = await response.json();
+                    const errorMessage = result.error || 'Error saving credentials. Please try again.';
+                    alert(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error saving credentials:', error);
+                alert('Network error. Please check your connection and try again.');
+            }
+        });
+    }
+
+    // Open credentials modal handler
+    if (editCredentialsLink) {
+        editCredentialsLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            credentialsModal.classList.add('show');
+        });
+    }
+
+    // Close credentials modal handler
+    if (closeModal) {
+        closeModal.addEventListener('click', function() {
+            credentialsModal.classList.remove('show');
+        });
+    }
+
+    // Close modal when clicking outside of it
+    window.addEventListener('click', function(event) {
+        if (event.target === credentialsModal) {
+            credentialsModal.classList.remove('show');
+        }
     });
-}
-if (document.getElementById('closeModal')) {
-    document.getElementById('closeModal').addEventListener('click', function() {
-        document.getElementById('credentialsModal').style.display = 'none';
-    });
-}
+});

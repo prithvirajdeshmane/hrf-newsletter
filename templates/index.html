@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/index.css') }}">
 
 </head>
-<body>
+<body data-show-credentials-modal="{{ 'true' if not creds_ok else 'false' }}">
     <div class="container">
         <a href="#" id="editCredentialsLink"><i class="fa-solid fa-key key-icon"></i></a>
         <img src="{{ url_for('static', filename='images/brand/HRF-Logo.png') }}" alt="HRF Logo" class="logo-image" />
@@ -63,82 +63,7 @@
         </div>
     </div>
 
-    <script>
-        // Show credentials modal if creds_ok is false (from Flask)
-    </script>
-    {% if not creds_ok %}
-    <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('credentialsModal').classList.add('show');
-        });
-    </script>
-    {% endif %}
-    <script>
-        // Handle credentials form submission
-        document.getElementById('credentialsForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const apiKey = document.getElementById('apiKey').value;
-            const serverPrefix = document.getElementById('serverPrefix').value;
-            
-            try {
-                const response = await fetch('/api/save-credentials', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        api_key: apiKey,
-                        server_prefix: serverPrefix
-                    })
-                });
-                
-                if (response.ok) {
-                    document.getElementById('credentialsModal').classList.remove('show');
-                    // Credentials saved successfully - modal closes silently
-                } else {
-                    const result = await response.json();
-                    const errorMessage = result.error || 'Error saving credentials. Please try again.';
-                    alert(errorMessage);
-                }
-            } catch (error) {
-                console.error('Error saving credentials:', error);
-                alert('Network error. Please check your connection and try again.');
-            }
-        });
-
-        // Handle newsletter building
-        document.getElementById('newsletterForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const selectedCountry = document.getElementById('country').value;
-            if (!selectedCountry) {
-                alert('Please select a country');
-                return;
-            }
-            // Navigate to build-newsletter page with only country parameter
-            const params = new URLSearchParams({
-                country: selectedCountry
-            });
-            window.location.href = `/build-newsletter?${params.toString()}`;
-        });
-    </script>
-<script>
-    // Open credentials modal on CTA click
-    document.addEventListener('DOMContentLoaded', function() {
-        var link = document.getElementById('editCredentialsLink');
-        if (link) {
-            link.addEventListener('click', function(event) {
-                event.preventDefault();
-                document.getElementById('credentialsModal').classList.add('show');
-            });
-        }
-        var closeBtn = document.getElementById('closeModal');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function() {
-                document.getElementById('credentialsModal').classList.remove('show');
-            });
-        }
-    });
-</script>
+    <!-- External JavaScript -->
+    <script src="{{ url_for('static', filename='scripts/index.js') }}"></script>
 </body>
 </html>
