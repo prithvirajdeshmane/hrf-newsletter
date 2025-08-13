@@ -44,7 +44,7 @@
                     
                     {% if hero.cta_learn_more_url %}
                         <p style="margin: 15px 0; text-align: center;">
-                            <a href="{{ hero.cta_learn_more_url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">Learn More</a>
+                            <a href="{{ hero.cta_learn_more_url }}" class="cta-button">{{ metadata.cta_learn_more|safe }}</a>
                         </p>
                     {% endif %}
                     
@@ -74,11 +74,11 @@
                                         <h2 style="font-size: 18px; margin: 10px 0 5px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ stories[0].headline }}</h2>
                                         <p style="margin-bottom: 10px; font-size: 16px; line-height: 1.5; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ stories[0].description }}</p>
                                         <p style="margin-bottom: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                            <a href="{{ stories[0].url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">Read Story</a>
+                                            <a href="{{ stories[0].url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">{{ metadata.cta_read_story|safe }}</a>
                                         </p>
                                         {% if stories[0].cta %}
                                         <p style="margin-top: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                            <a href="{{ stories[0].cta.url }}" style="background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 14px;">{{ stories[0].cta.text }}</a>
+                                            <a href="{{ stories[0].cta.url }}" class="cta-button">{{ stories[0].cta.text|safe }}</a>
                                         </p>
                                         {% endif %}
                                     </td>
@@ -94,11 +94,11 @@
                                         <h2 style="font-size: 18px; margin: 10px 0 5px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ story.headline }}</h2>
                                         <p style="margin-bottom: 10px; font-size: 16px; line-height: 1.5; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ story.description }}</p>
                                         <p style="margin-bottom: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                            <a href="{{ story.url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">Read Story</a>
+                                            <a href="{{ story.url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">{{ metadata.cta_read_story|safe }}</a>
                                         </p>
                                         {% if story.cta %}
                                         <p style="margin-top: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                            <a href="{{ story.cta.url }}" style="background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 14px;">{{ story.cta.text }}</a>
+                                            <a href="{{ story.cta.url }}" class="cta-button">{{ story.cta.text|safe }}</a>
                                         </p>
                                         {% endif %}
                                     </td>
@@ -114,7 +114,7 @@
                 <td style="background-color: #eeeeee; color: #777777; padding: 20px 30px; text-align: center; font-size: 12px; line-height: 1.4;">
                     {% if metadata.country_name %}<p style="margin: 0 0 10px 0; font-weight: bold; color: #777777;">{{ metadata.country_name }}</p>{% endif %}
                     <p style="margin: 0 0 5px 0; color: #777777;">{{ global.foundation_name }}</p>
-                    <p style="margin: 0; color: #777777;">{{ global.footer_text }}</p>
+                    <p style="margin: 0; color: #777777;">{{ global.footer_text|safe }}</p>
                 </td>
             </tr>
         </table>
