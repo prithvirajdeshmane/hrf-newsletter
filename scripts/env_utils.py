@@ -1,44 +1,45 @@
 """
-Utility functions for managing Mailchimp credentials in a .env file.
+Utility functions for managing Mailchimp credentials in a .env file using the
+`python-dotenv` library for robust and safe file operations.
 """
-from pathlib import Path
-from typing import Tuple
+from dotenv import find_dotenv, get_key, set_key
 
-def env_file_path() -> Path:
-    """Return the Path to the .env file in the project root."""
-    return Path(__file__).parent.parent / ".env"
+# Find the .env file in the project root. The path is loaded once and reused.
+env_path = find_dotenv()
 
 def credentials_present() -> bool:
     """
-    Check if .env exists and contains non-empty MAILCHIMP_API_KEY and MAILCHIMP_SERVER_PREFIX.
+    Checks if Mailchimp credentials exist and are non-empty in the .env file.
+
+    This function leverages `dotenv.get_key` to safely read the values.
+
     Returns:
-        bool: True if both credentials are present and non-empty.
+        bool: True if both MAILCHIMP_API_KEY and MAILCHIMP_SERVER_PREFIX are
+              present and have non-empty values, False otherwise.
     """
-    path = env_file_path()
-    if not path.exists():
+    # If the .env file doesn't exist, find_dotenv() returns an empty string.
+    if not env_path:
         return False
-    lines = path.read_text(encoding="utf-8").splitlines()
-    creds = {"MAILCHIMP_API_KEY": None, "MAILCHIMP_SERVER_PREFIX": None}
-    for line in lines:
-        if line.strip().startswith("MAILCHIMP_API_KEY="):
-            creds["MAILCHIMP_API_KEY"] = line.split("=", 1)[1].strip()
-        if line.strip().startswith("MAILCHIMP_SERVER_PREFIX="):
-            creds["MAILCHIMP_SERVER_PREFIX"] = line.split("=", 1)[1].strip()
-    return all(creds[k] for k in creds)
+
+    api_key = get_key(env_path, "MAILCHIMP_API_KEY")
+    server_prefix = get_key(env_path, "MAILCHIMP_SERVER_PREFIX")
+
+    return bool(api_key and server_prefix)
 
 def save_credentials(api_key: str, server_prefix: str) -> None:
     """
-    Save Mailchimp credentials to the .env file, creating or updating as needed.
+    Saves or updates Mailchimp credentials in the .env file.
+
+    This function uses `dotenv.set_key` to safely write the key-value pairs,
+    creating the file if it doesn't exist and preserving other existing values.
+
     Args:
-        api_key (str): Mailchimp API key
-        server_prefix (str): Mailchimp server prefix
+        api_key (str): The Mailchimp API key to save.
+        server_prefix (str): The Mailchimp server prefix (e.g., 'us21') to save.
     """
-    path = env_file_path()
-    lines = []
-    if path.exists():
-        lines = path.read_text(encoding="utf-8").splitlines()
-    # Remove any existing credential lines
-    lines = [line for line in lines if not (line.strip().startswith("MAILCHIMP_API_KEY=") or line.strip().startswith("MAILCHIMP_SERVER_PREFIX="))]
-    lines.append(f"MAILCHIMP_API_KEY={api_key}")
-    lines.append(f"MAILCHIMP_SERVER_PREFIX={server_prefix}")
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # If .env doesn't exist, find_dotenv() returns '' but set_key needs a path.
+    # We'll default to creating a '.env' file in the current dir's parent.
+    path = env_path or find_dotenv(filename='.env', raise_error_if_not_found=False, usecwd=True) or '.env'
+
+    set_key(path, "MAILCHIMP_API_KEY", api_key)
+    set_key(path, "MAILCHIMP_SERVER_PREFIX", server_prefix)
