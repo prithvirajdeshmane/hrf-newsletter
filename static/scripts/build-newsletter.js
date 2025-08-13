@@ -52,10 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Get image data from input field (returns the URL value)
-    function getImageData(inputId) {
-        const input = document.getElementById(inputId);
-        return input ? input.value.trim() : '';
-    }
+
 
     function triggerFileInput(fileInputId) {
         document.getElementById(fileInputId).click();
@@ -380,95 +377,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             try {
-                const heroImageData = getImageData('heroImage');
-                const formData = {
-                    country: selectedCountry,
-                    languages: selectedLanguages ? selectedLanguages.join(',') : '',
-                    hero: {
-                        image: heroImageData,
-                        imageAlt: document.getElementById('heroImageAlt')?.value.trim() || '',
-                        headline: document.getElementById('heroHeadline')?.value.trim() || '',
-                        description: document.getElementById('heroDescription')?.value.trim() || '',
-                        learnMoreUrl: document.getElementById('learnMoreUrl')?.value.trim() || ''
-                    },
-                    ctas: [],
-                    stories: []
-                };
-                
-                // Collect CTA data
-                const ctaCount = parseInt(ctaCountSelect?.value || 0);
-                for (let i = 1; i <= ctaCount; i++) {
-                    const textElement = document.getElementById(`ctaText${i}`);
-                    const urlElement = document.getElementById(`ctaUrl${i}`);
-                    const text = textElement?.value.trim();
-                    const url = urlElement?.value.trim();
-                    
-                    if (text && url) {
-                        formData.ctas.push({ text, url });
-                    }
-                }
-                
-                // Collect story data
-                const storyCount = parseInt(storyCountSelect?.value || 0);
-                for (let i = 1; i <= storyCount; i++) {
-                    const imageData = getImageData(`storyImage${i}`);
-                    const imageAlt = document.getElementById(`storyImageAlt${i}`)?.value.trim() || '';
-                    const headline = document.getElementById(`storyHeadline${i}`)?.value.trim() || '';
-                    const description = document.getElementById(`storyDescription${i}`)?.value.trim() || '';
-                    const url = document.getElementById(`storyUrl${i}`)?.value.trim() || '';
-                    
-                    // Check if story has CTA
-                    const ctaSelect = document.getElementById(`storyCta${i}`);
-                    const hasCta = ctaSelect?.value === 'Yes';
-                    let cta = null;
-                    
-                    if (hasCta) {
-                        const ctaText = document.getElementById(`storyCtaText${i}`)?.value.trim() || '';
-                        const ctaUrl = document.getElementById(`storyCtaUrl${i}`)?.value.trim() || '';
-                        
-                        if (ctaText && ctaUrl) {
-                            cta = { text: ctaText, url: ctaUrl };
-                        }
-                    }
-                    
-                    if (imageData && url) {
-                        const storyData = { 
-                            image: imageData, 
-                            imageAlt, 
-                            headline, 
-                            description, 
-                            url 
-                        };
-                        
-                        // Add CTA if present
-                        if (cta) {
-                            storyData.cta = cta;
-                        }
-                        
-                        formData.stories.push(storyData);
-                    }
-                }
+                const formData = collectFormData();
                 
                 // Submit form data
-                const response = await fetch('/api/build-newsletter', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    if (result.local_files && result.local_files.length > 0) {
-                        alert(`Newsletter(s) generated successfully!\n\nGenerated files:\n${result.local_files.join('\n')}`);
-                    } else {
-                        alert(`${result.message || 'Success'}`);
-                    }
-                } else {
-                    alert(`Error generating newsletter: ${result.error || 'Unknown error'}`);
-                }
+                await submitNewsletterForm(formData);
             } catch (error) {
                 console.error('Error generating newsletter:', error);
                 alert('Error generating newsletter. Please try again.');
@@ -480,6 +392,112 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+    }
+
+    // Helper functions for form data collection
+    function collectHeroData() {
+        const heroImageData = getImageData('heroImage');
+        return {
+            image: heroImageData,
+            imageAlt: document.getElementById('heroImageAlt')?.value.trim() || '',
+            headline: document.getElementById('heroHeadline')?.value.trim() || '',
+            description: document.getElementById('heroDescription')?.value.trim() || '',
+            learnMoreUrl: document.getElementById('learnMoreUrl')?.value.trim() || ''
+        };
+    }
+
+    function collectCtaData() {
+        const ctas = [];
+        const ctaCount = parseInt(ctaCountSelect?.value || 0);
+        
+        for (let i = 1; i <= ctaCount; i++) {
+            const textElement = document.getElementById(`ctaText${i}`);
+            const urlElement = document.getElementById(`ctaUrl${i}`);
+            const text = textElement?.value.trim();
+            const url = urlElement?.value.trim();
+            
+            if (text && url) {
+                ctas.push({ text, url });
+            }
+        }
+        
+        return ctas;
+    }
+
+    function collectStoryCta(storyIndex) {
+        const ctaSelect = document.getElementById(`storyCta${storyIndex}`);
+        const hasCta = ctaSelect?.value === 'Yes';
+        
+        if (!hasCta) return null;
+        
+        const ctaText = document.getElementById(`storyCtaText${storyIndex}`)?.value.trim() || '';
+        const ctaUrl = document.getElementById(`storyCtaUrl${storyIndex}`)?.value.trim() || '';
+        
+        return (ctaText && ctaUrl) ? { text: ctaText, url: ctaUrl } : null;
+    }
+
+    function collectStoryData() {
+        const stories = [];
+        const storyCount = parseInt(storyCountSelect?.value || 0);
+        
+        for (let i = 1; i <= storyCount; i++) {
+            const imageData = getImageData(`storyImage${i}`);
+            const imageAlt = document.getElementById(`storyImageAlt${i}`)?.value.trim() || '';
+            const headline = document.getElementById(`storyHeadline${i}`)?.value.trim() || '';
+            const description = document.getElementById(`storyDescription${i}`)?.value.trim() || '';
+            const url = document.getElementById(`storyUrl${i}`)?.value.trim() || '';
+            
+            if (imageData && url) {
+                const storyData = { 
+                    image: imageData, 
+                    imageAlt, 
+                    headline, 
+                    description, 
+                    url 
+                };
+                
+                const cta = collectStoryCta(i);
+                if (cta) {
+                    storyData.cta = cta;
+                }
+                
+                stories.push(storyData);
+            }
+        }
+        
+        return stories;
+    }
+
+    function collectFormData() {
+        return {
+            country: selectedCountry,
+            languages: selectedLanguages ? selectedLanguages.join(',') : '',
+            hero: collectHeroData(),
+            ctas: collectCtaData(),
+            stories: collectStoryData()
+        };
+    }
+
+    async function submitNewsletterForm(formData) {
+        const response = await fetch('/api/build-newsletter', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            if (result.local_files && result.local_files.length > 0) {
+                alert(`Newsletter(s) generated successfully!\n\nGenerated files:\n${result.local_files.join('\n')}`);
+            } else {
+                alert(`${result.message || 'Success'}`);
+            }
+        } else {
+            alert(`Error generating newsletter: ${result.error || 'Unknown error'}`);
+        }
     }
 
     // Make triggerFileInput globally accessible for onclick handlers

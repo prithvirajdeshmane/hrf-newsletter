@@ -8,11 +8,12 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
+import re
 
 # Constants
-TEMP_TEMPLATE_DIR = "temp_template_testing"
+GENERATED_NEWSLETTERS_DIR = "generated_newsletters"
 BRAND_INFO_FILE = "data/brand_information.json"
-DEBUG_LOGGING = True  # Set to False for production
+DEBUG_LOGGING = True  # Console logging enabled for debugging
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -29,6 +30,14 @@ def map_story_fields(story: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Story data with template-expected field names like 'image_url', 'image_alt'
     """
+    # Debug logging for story data
+    if DEBUG_LOGGING:
+        print(f"DEBUG: Processing story data - Type: {type(story)}, Value: {story}")
+    
+    # Validate story data structure
+    if not isinstance(story, dict):
+        raise ValueError(f"Story data must be a dictionary, got {type(story).__name__}: {story}")
+    
     return {
         'image_url': story.get('image', ''),
         'image_alt': story.get('imageAlt', ''),
@@ -38,45 +47,81 @@ def map_story_fields(story: Dict[str, Any]) -> Dict[str, Any]:
         'cta': story.get('cta')  # CTA structure is already correct
     }
 
-def generate_newsletter_template(form_data: Dict[str, Any]) -> str:
+def _load_country_data(country_key: str) -> tuple[Dict[str, Any], str, List[Dict[str, Any]]]:
     """
-    Generate a single newsletter template based on user configuration and inputs.
-    
-    Only includes elements that the user has actually provided:
-    - Hero section (always present with provided data)
-    - CTAs (only if provided by user)
-    - Stories (only if provided by user, with their actual CTAs)
+    Load and validate country data.
     
     Args:
-        form_data: Captured form data from the user
+        country_key: Country identifier
         
     Returns:
-        Path to the generated template file
+        Tuple of (country_info, country_name, languages)
+        
+    Raises:
+        ValueError: If no languages found for country
     """
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # Create output directory
-    output_dir = Path(TEMP_TEMPLATE_DIR)
-    output_dir.mkdir(exist_ok=True)
-    
-    # Load country name from country_languages.json
     countries_data = data_manager.get_countries()
-    country_key = form_data['country']
-    country_name = countries_data.get(country_key, {}).get('name', country_key)
+    country_info = countries_data.get(country_key, {})
+    country_name = country_info.get('name', country_key)
+    languages = country_info.get('languages', [])
     
-    # Load brand information
+    if not languages:
+        raise ValueError(f"No languages found for country: {country_key}")
+    
+    return country_info, country_name, languages
+
+
+def _load_brand_info() -> Dict[str, Any]:
+    """
+    Load brand information from JSON file.
+    
+    Returns:
+        Brand information dictionary
+    """
     brand_info_path = Path(BRAND_INFO_FILE)
     with brand_info_path.open('r', encoding='utf-8') as f:
-        brand_info = json.load(f)
+        return json.load(f)
+
+
+def _validate_form_data(form_data: Dict[str, Any]) -> None:
+    """
+    Validate form data structure.
     
-    # Prepare template variables based on user input
+    Args:
+        form_data: Form data to validate
+        
+    Raises:
+        ValueError: If hero data is not a dictionary
+    """
+    hero_data = form_data.get('hero', {})
+    if not isinstance(hero_data, dict):
+        raise ValueError(f"Hero data must be a dictionary, got {type(hero_data).__name__}: {hero_data}")
+
+
+def _create_template_data(form_data: Dict[str, Any], country_name: str, language_info: Dict[str, Any], brand_info: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Create template data for newsletter generation.
+    
+    Args:
+        form_data: User form data
+        country_name: Name of the country
+        language_info: Language information
+        brand_info: Brand information
+        
+    Returns:
+        Template data dictionary
+    """
+    hero_data = form_data.get('hero', {})
     hero_ctas = form_data.get('ctas', [])
     user_stories = form_data.get('stories', [])
     
-    template_data = {
+    language_code = language_info.get('code', 'en')
+    script_direction = language_info.get('scriptDirection', 'ltr')
+    
+    return {
         'country': form_data['country'],
-        'dir': 'ltr',
-        'lang': 'en',
+        'dir': script_direction,
+        'lang': language_code,
         'metadata': {
             'country_name': country_name
         },
@@ -86,33 +131,80 @@ def generate_newsletter_template(form_data: Dict[str, Any]) -> str:
             'logo_url': brand_info['logo_url']
         },
         'hero': {
-            'image_url': form_data['hero'].get('image', ''),
-            'image_alt': form_data['hero'].get('imageAlt', ''),
-            'headline': form_data['hero'].get('headline', ''),
-            'description': form_data['hero'].get('description', ''),
-            'cta_learn_more_url': form_data['hero'].get('learnMoreUrl', ''),
-            'ctas_buttons': hero_ctas  # Include all CTAs provided by user
+            'image_url': hero_data.get('image', ''),
+            'image_alt': hero_data.get('imageAlt', ''),
+            'headline': hero_data.get('headline', ''),
+            'description': hero_data.get('description', ''),
+            'cta_learn_more_url': hero_data.get('learnMoreUrl', ''),
+            'ctas_buttons': hero_ctas
         },
-        'stories': [map_story_fields(story) for story in user_stories]  # Include all stories provided by user
+        'stories': [map_story_fields(story) for story in user_stories]
     }
+
+
+def _generate_safe_filename(country_key: str, language_code: str, timestamp: str) -> str:
+    """
+    Generate a safe filename for Windows by sanitizing invalid characters.
     
-    # Generate descriptive filename based on content
-    story_count = len(user_stories)
-    cta_count = len(hero_ctas)
-    filename_parts = [
-        f"newsletter_{country_key}",
-        f"{cta_count}ctas" if cta_count > 0 else "no_ctas",
-        f"{story_count}stories" if story_count > 0 else "no_stories",
-        timestamp
-    ]
-    filename = "_".join(filename_parts) + ".html"
+    Args:
+        country_key: Country identifier
+        language_code: Language code
+        timestamp: Timestamp string
+        
+    Returns:
+        Sanitized filename
+    """
+    safe_country_key = re.sub(r'[<>:"/\\|?*]', '_', country_key)
+    safe_language_code = re.sub(r'[<>:"/\\|?*]', '_', language_code)
+    return f"newsletter_{safe_country_key}_{safe_language_code}_{timestamp}.html"
+
+
+def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
+    """
+    Generate newsletter templates for each language spoken in the selected country.
     
-    # Generate and save template
-    template_html = render_template('newsletter_template.html', **template_data)
-    template_file = output_dir / filename
-    template_file.write_text(template_html, encoding='utf-8')
+    Creates newsletters in generated_newsletters/{country}/ directory structure.
+    For countries with multiple languages, generates one newsletter per language.
     
-    return str(template_file)
+    Args:
+        form_data: Captured form data from the user
+        
+    Returns:
+        List of paths to generated template files
+    """
+    
+    # Load and validate data
+    _validate_form_data(form_data)
+    country_key = form_data['country']
+    country_info, country_name, languages = _load_country_data(country_key)
+    brand_info = _load_brand_info()
+    
+    # Create output directory
+    country_dir_name = country_name.replace(' ', '_')
+    output_dir = Path(GENERATED_NEWSLETTERS_DIR) / country_dir_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    generated_files = []
+    
+    # Generate one newsletter for each language
+    for language_info in languages.values():
+        template_data = _create_template_data(form_data.copy(), country_name, language_info, brand_info)
+        
+        # Generate safe filename
+        language_code = language_info.get('languageCode', 'en')
+        now = datetime.now()
+        date_str = now.strftime("%m%d%y")
+        time_str = now.strftime("%H%M%S")
+        filename = _generate_safe_filename(country_key, language_code, f"{date_str}_{time_str}")
+        
+        # Generate and save template
+        template_html = render_template('newsletter_template.html', **template_data)
+        template_file = output_dir / filename
+        template_file.write_text(template_html, encoding='utf-8')
+        
+        generated_files.append(str(template_file))
+    
+    return generated_files
 
 @app.route('/api/countries')
 def get_countries():
@@ -156,60 +248,77 @@ def build_newsletter() -> str:
     """
     return render_template("build-newsletter.html")
 
+def _validate_request_data(form_data: Dict[str, Any]) -> None:
+    """
+    Validate incoming request data.
+    
+    Args:
+        form_data: Form data to validate
+        
+    Raises:
+        ValueError: If required fields are missing
+    """
+    if not form_data:
+        raise ValueError('No data received')
+    
+    required_fields = ['country', 'hero']
+    for field in required_fields:
+        if field not in form_data:
+            raise ValueError(f'Missing required field: {field}')
+
+
+def _log_debug_info(form_data: Dict[str, Any]) -> None:
+    """
+    Log debug information if DEBUG_LOGGING is enabled.
+    
+    Args:
+        form_data: Form data to log
+    """
+    if not DEBUG_LOGGING:
+        return
+        
+    print("=" * 60)
+    print("INCOMING FORM DATA:")
+    print("=" * 60)
+    print(f"Country: {form_data.get('country', 'NOT SET')}")
+    print(f"Languages: {form_data.get('languages', 'NOT SET')}")
+    print("\nHERO DATA:")
+    hero_data = form_data.get('hero', {})
+    if isinstance(hero_data, dict):
+        for key, value in hero_data.items():
+            print(f"  {key}: {value}")
+    else:
+        print(f"  Hero data is not a dictionary: {type(hero_data).__name__} = {hero_data}")
+    print(f"\nCTAs: {form_data.get('ctas', [])}")
+    print(f"\nSTORIES: {form_data.get('stories', [])}")
+    print("=" * 60)
+
+
 @app.route('/api/build-newsletter', methods=['POST'])
 def api_build_newsletter():
-    """
-    Handle newsletter generation request and create test template variations.
-    
-    Returns:
-        JSON response with success status and generated template information
-    """
+    """Handle newsletter generation request."""
     try:
         form_data = request.get_json()
         if not form_data:
-            return jsonify({'error': 'No data received'}), 400
+            return jsonify({'success': False, 'error': 'No data received'}), 400
         
-        # Validate required fields
-        required_fields = ['country', 'hero']
-        for field in required_fields:
-            if field not in form_data:
-                return jsonify({'error': f'Missing required field: {field}'}), 400
+        # Basic validation
+        if 'country' not in form_data:
+            return jsonify({'success': False, 'error': 'Missing country field'}), 400
         
-        # Debug logging (configurable via DEBUG_LOGGING constant)
-        if DEBUG_LOGGING:
-            print("=" * 60)
-            print("INCOMING FORM DATA:")
-            print("=" * 60)
-            print(f"Country: {form_data.get('country', 'NOT SET')}")
-            print(f"Languages: {form_data.get('languages', 'NOT SET')}")
-            print("\nHERO DATA:")
-            hero_data = form_data.get('hero', {})
-            for key, value in hero_data.items():
-                print(f"  {key}: {value}")
-            print(f"\nCTAs: {form_data.get('ctas', [])}")
-            print(f"\nSTORIES: {form_data.get('stories', [])}")
-            print("=" * 60)
-        
-        # Generate user-specific newsletter template
-        template_file = generate_newsletter_template(form_data)
-        
+        generated_files = generate_newsletter_templates(form_data)
         return jsonify({
             'success': True,
-            'message': 'Successfully generated newsletter template based on your configuration!',
-            'local_file': template_file,
-            'template_generated': True
+            'message': f'Successfully generated {len(generated_files)} newsletter(s)',
+            'files': generated_files
         })
         
-    except KeyError as e:
-        return jsonify({
-            'success': False,
-            'error': f'Missing required data field: {str(e)}'
-        }), 400
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Failed to process form data: {str(e)}'
-        }), 500
+        error_msg = f"Failed to process form data: {str(e)}"
+        print(f"ERROR: {error_msg}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': error_msg}), 500
 
 @app.route("/api/save-credentials", methods=["POST"])
 def api_save_credentials():
@@ -224,19 +333,19 @@ def api_save_credentials():
     try:
         data = request.get_json()
         if not data:
-            return {"success": False, "error": "No data received"}, 400
+            return jsonify({"success": False, "error": "No data received"}), 400
             
         api_key = data.get("api_key", "").strip()
         server_prefix = data.get("server_prefix", "").strip()
         
         if not api_key or not server_prefix:
-            return {"success": False, "error": "Both API key and server prefix are required"}, 400
+            return jsonify({"success": False, "error": "Both API key and server prefix are required"}), 400
             
         save_credentials(api_key, server_prefix)
-        return {"success": True, "message": "Credentials saved successfully"}
+        return jsonify({"success": True, "message": "Credentials saved successfully"})
         
     except Exception as e:
-        return {"success": False, "error": f"Failed to save credentials: {str(e)}"}, 500
+        return jsonify({"success": False, "error": f"Failed to save credentials: {str(e)}"}), 500
 
 @app.route("/api/check-credentials", methods=["GET"])
 def api_check_credentials():
@@ -248,9 +357,9 @@ def api_check_credentials():
     """
     try:
         has_credentials = credentials_present()
-        return {"hasCredentials": has_credentials, "success": True}
+        return jsonify({"hasCredentials": has_credentials, "success": True})
     except Exception as e:
-        return {"hasCredentials": False, "success": False, "error": str(e)}, 500
+        return jsonify({"hasCredentials": False, "success": False, "error": str(e)}), 500
 
 def open_browser() -> None:
     """
