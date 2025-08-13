@@ -142,6 +142,23 @@ def _create_template_data(form_data: Dict[str, Any], country_name: str, language
     }
 
 
+def _slugify(text: str) -> str:
+    """
+    Convert a string into a URL- and filename-safe slug.
+
+    Replaces spaces with underscores and removes characters that are invalid
+    for Windows filenames.
+
+    Args:
+        text: The string to slugify.
+
+    Returns:
+        The slugified string.
+    """
+    text = text.replace(' ', '_')
+    return re.sub(r'[<>:"/\\|?*]', '_', text)
+
+
 def _generate_safe_filename(country_key: str, language_code: str, timestamp: str) -> str:
     """
     Generate a safe filename for Windows by sanitizing invalid characters.
@@ -154,9 +171,8 @@ def _generate_safe_filename(country_key: str, language_code: str, timestamp: str
     Returns:
         Sanitized filename
     """
-    safe_country_key = re.sub(r'[<>:"/\\|?*]', '_', country_key)
-    safe_language_code = re.sub(r'[<>:"/\\|?*]', '_', language_code)
-    return f"newsletter_{safe_country_key}_{safe_language_code}_{timestamp}.html"
+    safe_country_key = _slugify(country_key)
+    return f"newsletter_{safe_country_key}_{language_code}_{timestamp}.html"
 
 
 def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
@@ -180,7 +196,7 @@ def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
     brand_info = _load_brand_info()
     
     # Create output directory
-    country_dir_name = country_name.replace(' ', '_')
+    country_dir_name = _slugify(country_key)
     output_dir = Path(GENERATED_NEWSLETTERS_DIR) / country_dir_name
     output_dir.mkdir(parents=True, exist_ok=True)
     
