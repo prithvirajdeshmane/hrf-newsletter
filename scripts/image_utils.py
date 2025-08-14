@@ -15,15 +15,24 @@ from urllib.parse import urlparse
 class ImageProcessor:
     """Handles image processing and local storage for newsletter generation."""
     
-    def __init__(self, base_dir: str = "static/images/user-images"):
+    def __init__(self, base_dir: str = "static/images/user-images", session_id: str = None):
         """
         Initialize ImageProcessor with target directory.
         
         Args:
             base_dir: Directory to save user images (relative to project root)
+            session_id: Unique session identifier for user isolation
         """
         self.base_dir = Path(base_dir)
-        self.base_dir.mkdir(parents=True, exist_ok=True)
+        self.session_id = session_id
+        
+        # Create session-specific directory if session_id provided
+        if session_id:
+            self.session_dir = self.base_dir / session_id
+            self.session_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            self.session_dir = self.base_dir
+            self.session_dir.mkdir(parents=True, exist_ok=True)
     
     def _get_file_extension_from_base64(self, base64_data: str) -> str:
         """
@@ -97,14 +106,17 @@ class ImageProcessor:
             # Decode base64 data
             image_data = base64.b64decode(actual_data)
             
-            # Save to file
-            file_path = self.base_dir / f"{filename}{extension}"
+            # Save to file in session directory
+            file_path = self.session_dir / f"{filename}{extension}"
             with open(file_path, 'wb') as f:
                 f.write(image_data)
             
             # Return relative path from newsletter location (generated_newsletters/{country}/)
-            # to the image file (static/images/user-images/)
-            return f"../../static/images/user-images/{filename}{extension}"
+            # to the image file (static/images/user-images/{session}/)
+            if self.session_id:
+                return f"../../static/images/user-images/{self.session_id}/{filename}{extension}"
+            else:
+                return f"../../static/images/user-images/{filename}{extension}"
             
         except Exception as e:
             print(f"ERROR: Failed to save base64 image {filename}: {str(e)}")
@@ -129,14 +141,17 @@ class ImageProcessor:
             # Determine extension
             extension = self._get_file_extension_from_url(url)
             
-            # Save to file
-            file_path = self.base_dir / f"{filename}{extension}"
+            # Save to file in session directory
+            file_path = self.session_dir / f"{filename}{extension}"
             with open(file_path, 'wb') as f:
                 f.write(response.content)
             
             # Return relative path from newsletter location (generated_newsletters/{country}/)
-            # to the image file (static/images/user-images/)
-            return f"../../static/images/user-images/{filename}{extension}"
+            # to the image file (static/images/user-images/{session}/)
+            if self.session_id:
+                return f"../../static/images/user-images/{self.session_id}/{filename}{extension}"
+            else:
+                return f"../../static/images/user-images/{filename}{extension}"
             
         except Exception as e:
             print(f"ERROR: Failed to download and save image from {url}: {str(e)}")
@@ -198,13 +213,57 @@ class ImageProcessor:
     def cleanup_old_images(self) -> None:
         """
         Clean up old user images to prevent disk space issues.
-        Removes all files in the user-images directory.
+        For session-based storage, removes all files in the current session directory.
+        For non-session storage, removes all files in the user-images directory.
         """
         try:
-            if self.base_dir.exists():
-                for file_path in self.base_dir.glob('*'):
+            if self.session_dir.exists():
+                for file_path in self.session_dir.glob('*'):
                     if file_path.is_file():
                         file_path.unlink()
                         print(f"Cleaned up old image: {file_path.name}")
         except Exception as e:
             print(f"WARNING: Failed to cleanup old images: {str(e)}")
+    
+    def cleanup_session_directory(self) -> None:
+        """
+        Clean up entire session directory and all its contents.
+        Only works when session_id is provided.
+        """
+        try:
+            if self.session_id and self.session_dir.exists():
+                # Remove all files in session directory
+                for file_path in self.session_dir.glob('*'):
+                    if file_path.is_file():
+                        file_path.unlink()
+                
+                # Remove the session directory itself
+                self.session_dir.rmdir()
+                print(f"Cleaned up session directory: {self.session_id}")
+        except Exception as e:
+            print(f"WARNING: Failed to cleanup session directory: {str(e)}")
+
+    @staticmethod
+    def cleanup_all_sessions(base_dir: str = "static/images/user-images") -> None:
+        """
+        Clean up all session directories to prevent disk space issues.
+        Useful for maintenance or when sessions expire.
+        
+        Args:
+            base_dir: Base directory containing session folders
+        """
+        try:
+            base_path = Path(base_dir)
+            if base_path.exists():
+                for session_dir in base_path.iterdir():
+                    if session_dir.is_dir():
+                        # Remove all files in session directory
+                        for file_path in session_dir.glob('*'):
+                            if file_path.is_file():
+                                file_path.unlink()
+                        
+                        # Remove the session directory itself
+                        session_dir.rmdir()
+                        print(f"Cleaned up session directory: {session_dir.name}")
+        except Exception as e:
+            print(f"WARNING: Failed to cleanup all session directories: {str(e)}")

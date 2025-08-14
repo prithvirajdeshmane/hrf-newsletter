@@ -187,10 +187,18 @@ def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
     country_key = form_data['country']
     country_info, country_name, languages = _load_country_data(country_key)
     
-    # Initialize image processor and save user images locally
-    image_processor = ImageProcessor()
+    # Get or create session ID for image isolation
+    from flask import session as flask_session
+    session_id = flask_session.get('session_id')
+    if not session_id:
+        import uuid
+        session_id = str(uuid.uuid4())[:8]  # Short session ID
+        flask_session['session_id'] = session_id
     
-    # Clean up old images before saving new ones
+    # Initialize image processor with session ID for user isolation
+    image_processor = ImageProcessor(session_id=session_id)
+    
+    # Clean up old images in this session before saving new ones
     image_processor.cleanup_old_images()
     
     # Save user images and get local file paths
