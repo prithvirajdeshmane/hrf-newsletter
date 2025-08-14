@@ -27,7 +27,7 @@ def clear_python_cache() -> int:
     removed_count = 0
     project_root = Path(__file__).parent
     
-    print("🧹 Clearing Python bytecode cache...")
+    print("--- Clearing Python bytecode cache...")
     
     # Remove .pyc files
     for pyc_file in project_root.rglob("*.pyc"):
@@ -60,7 +60,7 @@ def clear_flask_cache() -> int:
     removed_count = 0
     project_root = Path(__file__).parent
     
-    print("🌶️  Clearing Flask cache...")
+    print("--- Clearing Flask cache...")
     
     # Common Flask cache directories
     cache_dirs = [
@@ -100,12 +100,12 @@ def clear_generated_newsletters(confirm: bool = False) -> int:
         return 0
     
     if not confirm:
-        response = input("🗂️  Clear generated newsletters? (y/N): ").strip().lower()
+        response = input("--- Clear generated newsletters? (y/N): ").strip().lower()
         if response not in ['y', 'yes']:
             print("   Skipping generated newsletters cleanup.")
             return 0
     
-    print("🗂️  Clearing generated newsletters...")
+    print("--- Clearing generated newsletters...")
     
     try:
         # Count files before removal
@@ -135,7 +135,7 @@ def clear_user_images() -> int:
     if not user_images_dir.exists():
         return 0
     
-    print("🖼️  Clearing user-uploaded images...")
+    print("--- Clearing user-uploaded images...")
     
     try:
         # Count files before removal
@@ -152,9 +152,35 @@ def clear_user_images() -> int:
     return removed_count
 
 
+def clear_translation_cache() -> int:
+    """
+    Clear the translation cache directory.
+
+    Returns:
+        int: Number of items removed (1 if directory is removed, 0 otherwise)
+    """
+    removed_count = 0
+    project_root = Path(__file__).parent
+    translation_cache_dir = project_root / "cache" / "translations"
+
+    if not translation_cache_dir.exists():
+        return 0
+
+    print("--- Clearing translation cache...")
+
+    try:
+        shutil.rmtree(translation_cache_dir)
+        removed_count = 1
+        print(f"   Removed directory: {translation_cache_dir.relative_to(project_root)}")
+    except Exception as e:
+        print(f"   ⚠️  Failed to remove translation cache directory: {e}")
+
+    return removed_count
+
+
 def show_browser_cache_instructions() -> None:
     """Display instructions for clearing browser cache."""
-    print("\n🌐 Browser Cache Instructions:")
+    print("\n--- Browser Cache Instructions:")
     print("   • Hard refresh: Ctrl + F5 or Ctrl + Shift + R")
     print("   • Clear browser cache for localhost in browser settings")
     print("   • Or open Developer Tools (F12) → Network tab → check 'Disable cache'")
@@ -163,7 +189,7 @@ def show_browser_cache_instructions() -> None:
 def main() -> None:
     """Main function to orchestrate cache clearing."""
     print("=" * 60)
-    print("🧹 HRF Newsletter Generator - Cache Clearing Utility")
+    print("HRF Newsletter Generator - Cache Clearing Utility")
     print("=" * 60)
     
     total_removed = 0
@@ -179,6 +205,10 @@ def main() -> None:
     # Clear user-uploaded images
     user_images_removed = clear_user_images()
     total_removed += user_images_removed
+
+    # Clear translation cache
+    translation_cache_removed = clear_translation_cache()
+    total_removed += translation_cache_removed
     
     # Optionally clear generated newsletters
     newsletters_removed = clear_generated_newsletters()
@@ -188,18 +218,18 @@ def main() -> None:
     show_browser_cache_instructions()
     
     print("\n" + "=" * 60)
-    print(f"✅ Cache clearing complete! Removed {total_removed} items.")
+    print(f"SUCCESS: Cache clearing complete! Removed {total_removed} items.")
     print("=" * 60)
     
     if total_removed > 0:
-        print("\n💡 Recommendations:")
+        print("\n[INFO] Recommendations:")
         print("   1. Restart your Flask application")
         print("   2. Hard refresh your browser (Ctrl + F5)")
         print("   3. Check if the issue is resolved")
     else:
-        print("\n💡 No cache files found to remove.")
+        print("\n[INFO] No cache files found to remove.")
     
-    print("\n🚀 Ready to run: python app.py")
+    print("\n--> Ready to run: python app.py")
 
 
 if __name__ == "__main__":

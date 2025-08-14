@@ -7,6 +7,9 @@
 # Ignore secrets
 /secrets/*
 
+# Ignore local cache
+/cache/*
+
 # Python bytecode/cache
 __pycache__/
 scripts/__pycache__/
