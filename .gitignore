@@ -1,6 +1,9 @@
 # Ignore generated newsletters
 /generated_newsletters/
 
+# Ignore user images
+/static/images/user-images/
+
 # Python bytecode/cache
 __pycache__/
 scripts/__pycache__/
