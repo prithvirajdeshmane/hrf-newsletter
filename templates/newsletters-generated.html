@@ -74,16 +74,7 @@
         </div>
     </div>
 
-    <script>
-        function goBackToEditor() {
-            // Navigate back to the build newsletter page (country is already in session)
-            window.location.href = '/build-newsletter';
-        }
-
-        function uploadToMailchimp() {
-            // TODO: Implement Mailchimp upload functionality
-            alert('Mailchimp upload functionality will be implemented here.');
-        }
-    </script>
+    <!-- External JavaScript for newsletters-generated functionality -->
+    <script src="{{ url_for('static', filename='scripts/newsletters-generated.js') }}"></script>
 </body>
 </html>
