@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletters Generated - HRF Newsletter Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/newsletters-generated.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Generation Results Container -->
+        <div class="results-container">
+            <h1 class="success-heading">
+                <i class="fas fa-check-circle success-icon"></i>
+                Newsletters Generated
+            </h1>
+            
+            <div class="results-grid">
+                <div class="result-item">
+                    <span class="result-label">Country:</span>
+                    <span class="result-value">{{ country }}</span>
+                </div>
+                
+                <div class="result-item">
+                    <span class="result-label">Total Newsletters:</span>
+                    <span class="result-value">{{ total_newsletters }}</span>
+                </div>
+                
+                <div class="result-item">
+                    <span class="result-label">Languages:</span>
+                    <div class="result-value">
+                        {% if languages %}
+                            {% for language in languages %}
+                                <span class="language-tag">{{ language }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span>No languages specified</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            {% if filenames %}
+            <div class="files-section">
+                <h3>File names:</h3>
+                <ul class="files-list">
+                    {% for filename in filenames %}
+                        <li class="file-item">
+                            <i class="fas fa-file-alt"></i>
+                            <span>{{ filename }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Upload Options Container -->
+        <div class="upload-container">
+            <h2>Upload to Mailchimp</h2>
+            <p class="upload-description">Need more edit, or ready to upload?</p>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="goBackToEditor()">
+                    <i class="fas fa-edit"></i>
+                    Back to editor
+                </button>
+                <button type="button" class="btn btn-primary" onclick="uploadToMailchimp()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Upload to Mailchimp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBackToEditor() {
+            // Get the country from the current page data
+            const country = "{{ country }}";
+            // Navigate back to the build newsletter page with the country parameter
+            window.location.href = `/build-newsletter?country=${encodeURIComponent(country)}`;
+        }
+
+        function uploadToMailchimp() {
+            // TODO: Implement Mailchimp upload functionality
+            alert('Mailchimp upload functionality will be implemented here.');
+        }
+    </script>
+</body>
+</html>

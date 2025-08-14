@@ -13,7 +13,7 @@ import re
 # Constants
 GENERATED_NEWSLETTERS_DIR = "generated_newsletters"
 BRAND_INFO_FILE = "data/brand_information.json"
-DEBUG_LOGGING = True  # Console logging enabled for debugging
+DEBUG_LOGGING = False  # Console logging enabled for debugging
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -323,10 +323,24 @@ def api_build_newsletter():
             return jsonify({'success': False, 'error': 'Missing country field'}), 400
         
         generated_files = generate_newsletter_templates(form_data)
+        
+        # Extract file information for the results page
+        country = form_data['country']
+        languages = form_data.get('languages', '').split(',') if form_data.get('languages') else []
+        
+        # Extract just the filenames from full paths
+        filenames = [Path(file_path).name for file_path in generated_files]
+        
         return jsonify({
             'success': True,
             'message': f'Successfully generated {len(generated_files)} newsletter(s)',
-            'files': generated_files
+            'files': generated_files,
+            'result_data': {
+                'country': country,
+                'total_newsletters': len(generated_files),
+                'languages': languages,
+                'filenames': filenames
+            }
         })
         
     except Exception as e:
@@ -335,6 +349,30 @@ def api_build_newsletter():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': error_msg}), 500
+
+@app.route('/newsletters-generated')
+def newsletters_generated():
+    """
+    Display the newsletter generation results page.
+    
+    Returns:
+        Rendered HTML page showing generation results and upload options
+    """
+    # Get data from URL parameters (passed from JavaScript redirect)
+    country = request.args.get('country', 'Unknown')
+    total_newsletters = request.args.get('total', '0')
+    languages = request.args.get('languages', '').split(',') if request.args.get('languages') else []
+    filenames = request.args.get('filenames', '').split(',') if request.args.get('filenames') else []
+    
+    # Clean up empty strings from split
+    languages = [lang.strip() for lang in languages if lang.strip()]
+    filenames = [filename.strip() for filename in filenames if filename.strip()]
+    
+    return render_template('newsletters-generated.html', 
+                         country=country,
+                         total_newsletters=int(total_newsletters) if total_newsletters.isdigit() else 0,
+                         languages=languages,
+                         filenames=filenames)
 
 @app.route("/api/save-credentials", methods=["POST"])
 def api_save_credentials():
