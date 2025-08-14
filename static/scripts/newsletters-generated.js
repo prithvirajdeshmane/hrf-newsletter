@@ -14,13 +14,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     /**
      * Handle Mailchimp upload functionality.
-     * Makes POST request to upload images and displays results in popup.
+     * Makes POST request to upload images, then uploads newsletters.
      */
     function uploadToMailchimp() {
         // Show loading state
         const uploadBtn = document.querySelector('button[onclick="uploadToMailchimp()"]');
         const originalText = uploadBtn.innerHTML;
-        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading Images...';
         uploadBtn.disabled = true;
         
         // Make POST request to upload images
@@ -31,32 +31,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(response => response.json())
-        .then(data => {
-            // Format results for display
-            let message = `Upload Results:\n`;
-            message += `Total Images: ${data.total_images}\n`;
-            message += `Successful: ${data.successful_uploads}\n`;
-            message += `Failed: ${data.failed_uploads}\n\n`;
-            
-            if (data.results && data.results.length > 0) {
-                message += 'Image Details:\n';
-                data.results.forEach(result => {
-                    const status = result.status === 'success' ? '✅' : '❌';
-                    let details = result.status === 'success' ? 'URL received' : result.error;
-                    
-                    // Add compression info for successful uploads
-                    if (result.status === 'success' && result.compressed) {
-                        const originalKB = Math.round(result.original_size / 1024);
-                        const finalKB = Math.round(result.final_size / 1024);
-                        details += ` (compressed: ${originalKB}KB → ${finalKB}KB)`;
-                    }
-                    
-                    message += `${status} ${result.name}: ${details}\n`;
-                });
+        .then(imageData => {
+            // Check if image upload was successful
+            if (!imageData.success) {
+                throw new Error(imageData.message || 'Image upload failed');
             }
             
-            // Display results in alert popup
-            alert(message);
+            // Update button text for newsletter upload
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading Newsletters...';
+            
+            // Upload newsletters after successful image upload
+            return fetch('/api/upload-newsletters', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    session_id: null  // Will use session from Flask session
+                })
+            });
+        })
+        .then(response => response.json())
+        .then(newsletterData => {
+            // Check if newsletter upload was successful
+            if (newsletterData.success) {
+                // Redirect to success page
+                window.location.href = newsletterData.redirect_url;
+            } else {
+                throw new Error(newsletterData.error || 'Newsletter upload failed');
+            }
         })
         .catch(error => {
             console.error('Upload error:', error);

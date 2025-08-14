@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletters Uploaded - HRF Newsletter Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/newsletters-uploaded.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Success Container -->
+        <div class="success-container">
+            <div class="checkmark">✓</div>
+            <h1>Upload Successful</h1>
+            <p class="success-message">Newsletters uploaded successfully to Mailchimp</p>
+            
+            <div class="files-list">
+                {% for result in newsletter_results %}
+                    <div class="file-item">
+                        <span class="filename">{{ result.filename }}</span>
+                        {% if result.status == 'success' %}
+                            <span class="success-icon">✓</span>
+                            <span class="template-id">(ID: {{ result.template_id }})</span>
+                        {% else %}
+                            <span class="error-icon">✗</span>
+                            <span class="error-message">{{ result.error }}</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Next Steps Container -->
+        <div class="next-steps-container">
+            <h2>What's next?</h2>
+            <div class="buttons-container">
+                <a href="/" class="btn btn-primary">Create Another Newsletter</a>
+                <a href="/build-newsletter/{{ country }}" class="btn btn-secondary">Back to Editor</a>
+                <a href="https://mailchimp.com/templates/" target="_blank" class="btn btn-tertiary">Visit Mailchimp Templates</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

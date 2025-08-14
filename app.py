@@ -4,6 +4,7 @@ from scripts.env_utils import credentials_present, save_credentials
 from scripts.image_utils import ImageProcessor
 from scripts.translation_service import NewsletterTranslationService
 from scripts.mailchimp_image_uploader import MailchimpImageUploader
+from scripts.mailchimp_newsletter_uploader import MailchimpNewsletterUploader
 import threading
 import webbrowser
 import os
@@ -488,6 +489,89 @@ def newsletters_generated():
                          total_newsletters=results['total_newsletters'],
                          languages=results['languages'],
                          filenames=results['filenames'])
+
+@app.route('/api/upload-newsletters', methods=['POST'])
+def api_upload_newsletters():
+    """
+    Handle newsletter upload to Mailchimp after image uploads are complete.
+    
+    Thin wrapper around MailchimpNewsletterUploader class.
+    
+    Returns:
+        JSON response with upload results and redirect URL
+    """
+    try:
+        # Get session data
+        session_id = session.get('session_id')
+        if not session_id:
+            return jsonify({'success': False, 'error': 'Session ID required'}), 400
+        
+        newsletter_results = session.get('newsletter_results')
+        if not newsletter_results:
+            return jsonify({'success': False, 'error': 'No newsletter generation results found'}), 400
+        
+        # Build file paths from session data
+        country = newsletter_results['country']
+        filenames = newsletter_results['filenames']
+        country_dir = Path(GENERATED_NEWSLETTERS_DIR) / country
+        
+        newsletter_files = []
+        for filename in filenames:
+            file_path = country_dir / filename
+            if file_path.exists():
+                newsletter_files.append(str(file_path))
+        
+        if not newsletter_files:
+            return jsonify({'success': False, 'error': 'No newsletter files found to upload'}), 400
+        
+        # Use class-based approach for upload logic
+        uploader = MailchimpNewsletterUploader()
+        upload_results = uploader.upload_newsletter_session(session_id, country)
+        
+        # Store results in session for success page
+        total_newsletters = upload_results['successful_count'] + upload_results['failed_count']
+        session['newsletter_upload_results'] = {
+            'success': upload_results['success'],
+            'total_newsletters': total_newsletters,
+            'successful_uploads': upload_results['successful_count'],
+            'failed_uploads': upload_results['failed_count'],
+            'uploaded_files': [r for r in upload_results['newsletter_results'] if r['status'] == 'success'],
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify({
+            'success': upload_results['success'],
+            'message': upload_results['message'],
+            'redirect_url': '/newsletters-uploaded'
+        })
+        
+    except Exception as e:
+        error_msg = f"Newsletter upload failed: {str(e)}"
+        print(f"ERROR: {error_msg}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': error_msg}), 500
+
+@app.route('/newsletters-uploaded')
+def newsletters_uploaded():
+    """
+    Display the newsletter upload success page.
+    
+    Returns:
+        Rendered HTML page showing upload results and next steps
+    """
+    upload_results = session.get('newsletter_upload_results')
+    
+    if not upload_results:
+        # No upload results in session, redirect to home
+        return redirect(url_for('index'))
+    
+    return render_template('newsletters-uploaded.html', 
+                         success=upload_results['success'],
+                         total_newsletters=upload_results['total_newsletters'],
+                         successful_uploads=upload_results['successful_uploads'],
+                         failed_uploads=upload_results['failed_uploads'],
+                         uploaded_files=upload_results['uploaded_files'])
 
 @app.route("/api/save-credentials", methods=["POST"])
 def api_save_credentials():

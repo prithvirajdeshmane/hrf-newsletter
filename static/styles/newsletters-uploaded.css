@@ -1,0 +1,222 @@
+/* Newsletters Uploaded Success Page Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 30px;
+}
+
+/* Success Container */
+.success-container {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.checkmark {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #4CAF50;
+    color: white;
+    font-size: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-weight: bold;
+}
+
+.success-container h1 {
+    font-size: 32px;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.success-message {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #4CAF50;
+}
+
+.file-item.error {
+    border-left-color: #f44336;
+}
+
+.filename {
+    font-weight: 500;
+    color: #333;
+    flex: 1;
+    text-align: left;
+}
+
+.success-icon {
+    color: #4CAF50;
+    font-size: 20px;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.error-icon {
+    color: #f44336;
+    font-size: 20px;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.template-id {
+    color: #666;
+    font-size: 14px;
+}
+
+.error-message {
+    color: #f44336;
+    font-size: 14px;
+    max-width: 200px;
+    text-align: right;
+}
+
+/* Next Steps Container */
+.next-steps-container {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.next-steps-container h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 30px;
+    font-weight: 600;
+}
+
+.buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.btn {
+    padding: 15px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.btn-tertiary {
+    background: #28a745;
+    color: white;
+}
+
+.btn-tertiary:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+    .container {
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: start;
+    }
+    
+    .buttons-container {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .success-container,
+    .next-steps-container {
+        padding: 30px 20px;
+    }
+    
+    .success-container h1 {
+        font-size: 28px;
+    }
+    
+    .file-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .template-id,
+    .error-message {
+        text-align: left;
+        max-width: none;
+    }
+}
