@@ -76,10 +76,8 @@
 
     <script>
         function goBackToEditor() {
-            // Get the country from the current page data
-            const country = "{{ country }}";
-            // Navigate back to the build newsletter page with the country parameter
-            window.location.href = `/build-newsletter?country=${encodeURIComponent(country)}`;
+            // Navigate back to the build newsletter page (country is already in session)
+            window.location.href = '/build-newsletter';
         }
 
         function uploadToMailchimp() {

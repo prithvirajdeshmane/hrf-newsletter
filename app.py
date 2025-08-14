@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 from scripts.DataManager import DataManager
 from scripts.env_utils import credentials_present, save_credentials
 import threading
@@ -17,6 +17,7 @@ DEBUG_LOGGING = False  # Console logging enabled for debugging
 
 # Initialize the Flask application
 app = Flask(__name__)
+app.secret_key = 'hrf-newsletter-generator-secret-key-2025'  # Required for sessions
 # Create a DataManager instance for handling country data
 data_manager = DataManager()
 
@@ -252,17 +253,54 @@ def index() -> str:
         # Fallback to empty countries if data loading fails
         return render_template("index.html", countries={}, creds_ok=False, error=str(e))
 
+@app.route('/api/select-country', methods=['POST'])
+def api_select_country():
+    """
+    API endpoint to store selected country in session and return redirect URL.
+    
+    Expects JSON: {"country": str}
+    
+    Returns:
+        JSON response with redirect URL
+    """
+    try:
+        data = request.get_json()
+        if not data or 'country' not in data:
+            return jsonify({'success': False, 'error': 'Country is required'}), 400
+            
+        country = data['country'].strip()
+        if not country:
+            return jsonify({'success': False, 'error': 'Country cannot be empty'}), 400
+            
+        # Store country in session
+        session['selected_country'] = country
+        
+        return jsonify({
+            'success': True,
+            'redirect_url': '/build-newsletter'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Failed to select country: {str(e)}'}), 500
+
 @app.route("/build-newsletter")
 def build_newsletter() -> str:
     """
     Render the build-newsletter.html page.
     
-    The selected country is read by JavaScript from the query string.
+    The selected country is read from the session.
     
     Returns:
         Rendered HTML page for newsletter building interface
     """
-    return render_template("build-newsletter.html")
+    # Check if country is selected in session
+    selected_country = session.get('selected_country')
+    
+    if not selected_country:
+        # No country selected, redirect to home
+        return redirect(url_for('index'))
+    
+    return render_template("build-newsletter.html", selected_country=selected_country)
 
 def _validate_request_data(form_data: Dict[str, Any]) -> None:
     """
@@ -324,23 +362,24 @@ def api_build_newsletter():
         
         generated_files = generate_newsletter_templates(form_data)
         
-        # Extract file information for the results page
+        # Store results in session for secure access
         country = form_data['country']
         languages = form_data.get('languages', '').split(',') if form_data.get('languages') else []
-        
-        # Extract just the filenames from full paths
         filenames = [Path(file_path).name for file_path in generated_files]
+        
+        session['newsletter_results'] = {
+            'country': country,
+            'total_newsletters': len(generated_files),
+            'languages': languages,
+            'filenames': filenames,
+            'timestamp': datetime.now().isoformat()
+        }
         
         return jsonify({
             'success': True,
             'message': f'Successfully generated {len(generated_files)} newsletter(s)',
             'files': generated_files,
-            'result_data': {
-                'country': country,
-                'total_newsletters': len(generated_files),
-                'languages': languages,
-                'filenames': filenames
-            }
+            'redirect_url': '/newsletters-generated'
         })
         
     except Exception as e:
@@ -358,21 +397,21 @@ def newsletters_generated():
     Returns:
         Rendered HTML page showing generation results and upload options
     """
-    # Get data from URL parameters (passed from JavaScript redirect)
-    country = request.args.get('country', 'Unknown')
-    total_newsletters = request.args.get('total', '0')
-    languages = request.args.get('languages', '').split(',') if request.args.get('languages') else []
-    filenames = request.args.get('filenames', '').split(',') if request.args.get('filenames') else []
+    # Get data from session (secure, no URL exposure)
+    results = session.get('newsletter_results')
     
-    # Clean up empty strings from split
-    languages = [lang.strip() for lang in languages if lang.strip()]
-    filenames = [filename.strip() for filename in filenames if filename.strip()]
+    if not results:
+        # No results in session, redirect to home
+        return redirect(url_for('index'))
+    
+    # Clear the session data after use (optional - prevents back button issues)
+    # session.pop('newsletter_results', None)
     
     return render_template('newsletters-generated.html', 
-                         country=country,
-                         total_newsletters=int(total_newsletters) if total_newsletters.isdigit() else 0,
-                         languages=languages,
-                         filenames=filenames)
+                         country=results['country'],
+                         total_newsletters=results['total_newsletters'],
+                         languages=results['languages'],
+                         filenames=results['filenames'])
 
 @app.route("/api/save-credentials", methods=["POST"])
 def api_save_credentials():

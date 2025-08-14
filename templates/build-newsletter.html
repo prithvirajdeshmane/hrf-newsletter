@@ -79,6 +79,10 @@
             </div>
         </form>
     </div>
+    <!-- Pass server data to JavaScript -->
+    <script>
+        window.selectedCountry = "{{ selected_country }}";
+    </script>
     <!-- External JavaScript for build-newsletter functionality -->
     <script src="{{ url_for('static', filename='scripts/build-newsletter.js') }}"></script>
 </body>

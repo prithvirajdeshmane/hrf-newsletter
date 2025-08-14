@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Newsletter form submission handler
     if (newsletterForm) {
-        newsletterForm.addEventListener('submit', function(e) {
+        newsletterForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const selectedCountry = countrySelect.value;
             
@@ -27,11 +27,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Navigate to build-newsletter page with country parameter
-            const params = new URLSearchParams({
-                country: selectedCountry
-            });
-            window.location.href = `/build-newsletter?${params.toString()}`;
+            try {
+                // Store country in session via API
+                const response = await fetch('/api/select-country', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        country: selectedCountry
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Navigate to clean build-newsletter URL
+                    window.location.href = result.redirect_url;
+                } else {
+                    alert(result.error || 'Failed to select country. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error selecting country:', error);
+                alert('Network error. Please check your connection and try again.');
+            }
         });
     }
 

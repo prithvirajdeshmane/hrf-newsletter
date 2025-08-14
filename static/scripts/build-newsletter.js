@@ -2,9 +2,8 @@
 // Consolidated script for all build-newsletter.html functionality
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Global variables
-    const urlParams = new URLSearchParams(window.location.search);
-    const selectedCountry = urlParams.get('country');
+    // Global variables - read country from server-side data
+    const selectedCountry = window.selectedCountry || null;
     let selectedLanguages = [];
     
     // Initialize country display
@@ -490,16 +489,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const result = await response.json();
         
         if (response.ok) {
-            // Navigate to results page with generation data
-            if (result.result_data) {
-                const { country, total_newsletters, languages, filenames } = result.result_data;
-                const params = new URLSearchParams({
-                    country: country,
-                    total: total_newsletters.toString(),
-                    languages: languages.join(','),
-                    filenames: filenames.join(',')
-                });
-                window.location.href = `/newsletters-generated?${params.toString()}`;
+            // Navigate to results page using session-based approach
+            if (result.redirect_url) {
+                window.location.href = result.redirect_url;
             } else {
                 // Fallback for older API response format
                 alert(`${result.message || 'Success'}`);
