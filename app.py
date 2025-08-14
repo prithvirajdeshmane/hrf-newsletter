@@ -3,6 +3,7 @@ from scripts.DataManager import DataManager
 from scripts.env_utils import credentials_present, save_credentials
 from scripts.image_utils import ImageProcessor
 from scripts.translation_service import NewsletterTranslationService
+from scripts.mailchimp_image_uploader import MailchimpImageUploader
 import threading
 import webbrowser
 import os
@@ -443,15 +444,36 @@ def api_build_newsletter():
         traceback.print_exc()
         return jsonify({'success': False, 'error': error_msg}), 500
 
-@app.route('/newsletters-generated')
+@app.route('/newsletters-generated', methods=['GET', 'POST'])
 def newsletters_generated():
     """
-    Display the newsletter generation results page.
+    Display the newsletter generation results page or handle image uploads.
+    
+    GET: Display results page
+    POST: Handle Mailchimp image upload
     
     Returns:
-        Rendered HTML page showing generation results and upload options
+        GET: Rendered HTML page showing generation results and upload options
+        POST: JSON response with upload results
     """
-    # Get data from session (secure, no URL exposure)
+    if request.method == 'POST':
+        # Handle Mailchimp image upload
+        try:
+            uploader = MailchimpImageUploader()
+            session_id = session.get('session_id')
+            results = uploader.upload_session_images(session_id)
+            return jsonify(results)
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'message': f'Upload initialization failed: {str(e)}',
+                'total_images': 0,
+                'successful_uploads': 0,
+                'failed_uploads': 0,
+                'results': []
+            }), 500
+    
+    # GET request - display results page
     results = session.get('newsletter_results')
     
     if not results:

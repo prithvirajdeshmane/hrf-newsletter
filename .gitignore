@@ -3,6 +3,7 @@
 
 # Ignore user images
 /static/images/user-images/
+/static/images/test-images/
 
 # Ignore secrets
 /secrets/*
