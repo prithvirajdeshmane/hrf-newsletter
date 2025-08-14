@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 from scripts.DataManager import DataManager
 from scripts.env_utils import credentials_present, save_credentials
+from scripts.image_utils import ImageProcessor
 import threading
 import webbrowser
 import os
@@ -64,15 +65,24 @@ def _load_country_data(country_key: str) -> tuple[Dict[str, Any], str, List[Dict
     countries_data = data_manager.get_countries()
     country_info = countries_data.get(country_key, {})
     country_name = country_info.get('name', country_key)
-    languages = country_info.get('languages', [])
+    languages_dict = country_info.get('languages', {})
     
-    if not languages:
+    if not languages_dict:
         raise ValueError(f"No languages found for country: {country_key}")
     
+    # Convert languages dictionary to list of language info objects
+    languages = []
+    for language_name, language_data in languages_dict.items():
+        language_info = {
+            'name': language_name,
+            'code': language_data.get('languageCode', 'en'),
+            'locale': language_data.get('locale', 'en-US'),
+            'preferredName': language_data.get('preferredName', ''),
+            'scriptDirection': language_data.get('scriptDirection', 'ltr')
+        }
+        languages.append(language_info)
+    
     return country_info, country_name, languages
-
-
-
 
 
 def _validate_form_data(form_data: Dict[str, Any]) -> None:
@@ -174,37 +184,57 @@ def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
     Returns:
         List of paths to generated template files
     """
-    
-    # Load and validate data
-    _validate_form_data(form_data)
     country_key = form_data['country']
     country_info, country_name, languages = _load_country_data(country_key)
-
     
-    # Create output directory
-    country_dir_name = _slugify(country_key)
-    output_dir = Path(GENERATED_NEWSLETTERS_DIR) / country_dir_name
-    output_dir.mkdir(parents=True, exist_ok=True)
+    # Initialize image processor and save user images locally
+    image_processor = ImageProcessor()
+    
+    # Clean up old images before saving new ones
+    image_processor.cleanup_old_images()
+    
+    # Save user images and get local file paths
+    saved_images = image_processor.save_user_images(form_data)
+    
+    # Update form data with local image paths
+    if 'hero' in saved_images:
+        form_data['hero']['image'] = saved_images['hero']
+    
+    for i, story in enumerate(form_data.get('stories', []), 1):
+        story_key = f'story{i}'
+        if story_key in saved_images:
+            story['image'] = saved_images[story_key]
     
     generated_files = []
+    timestamp = datetime.now().strftime("%m%d%y_%H%M%S")
     
-    # Generate one newsletter for each language
-    for language_info in languages.values():
-        template_data = _create_template_data(form_data.copy(), country_name, language_info)
+    for language_info in languages:
+        language_code = language_info.get('code', 'en')
+        
+        # Create template data for this language
+        template_data = _create_template_data(form_data, country_name, language_info)
         
         # Generate safe filename
-        language_code = language_info.get('languageCode', 'en')
-        now = datetime.now()
-        date_str = now.strftime("%m%d%y")
-        time_str = now.strftime("%H%M%S")
-        filename = _generate_safe_filename(country_key, language_code, f"{date_str}_{time_str}")
+        safe_filename = _generate_safe_filename(country_key, language_code, timestamp)
         
-        # Generate and save template
+        # Create country directory
+        country_dir = Path(GENERATED_NEWSLETTERS_DIR) / country_key
+        country_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate newsletter file
+        file_path = country_dir / safe_filename
+        
+        # Render template using Flask's render_template
         template_html = render_template('newsletter_template.html', **template_data)
-        template_file = output_dir / filename
-        template_file.write_text(template_html, encoding='utf-8')
         
-        generated_files.append(str(template_file))
+        # Save rendered newsletter
+        with open(file_path, 'w', encoding='utf-8') as output_file:
+            output_file.write(template_html)
+        
+        generated_files.append(str(file_path))
+        
+        if DEBUG_LOGGING:
+            print(f"Generated newsletter: {file_path}")
     
     return generated_files
 
