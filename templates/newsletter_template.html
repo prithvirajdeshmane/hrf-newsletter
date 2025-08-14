@@ -26,7 +26,7 @@
         <table style="margin: 0 auto; width: 100%; max-width: 600px; background-color: #ffffff; border-spacing: 0; border-bottom: 1px solid #eeeeee;">
             <tr>
                 <td style="text-align: center; padding: 24px 0 16px 0;">
-                    <img src="{{ global.logo_url }}" alt="Foundation Logo" style="max-width: 200px; width: auto; height: auto; display: block; margin: 0 auto;">
+                    <img src="{{ url_for('static', filename='images/brand/HRF-Logo.png') }}" alt="Human Rights Foundation Logo" style="max-width: 200px; width: auto; height: auto; display: block; margin: 0 auto;">
                 </td>
             </tr>
         </table>
@@ -113,8 +113,8 @@
             <tr>
                 <td style="background-color: #eeeeee; color: #777777; padding: 20px 30px; text-align: center; font-size: 12px; line-height: 1.4;">
                     {% if metadata.country_name %}<p style="margin: 0 0 10px 0; font-weight: bold; color: #777777;">{{ metadata.country_name }}</p>{% endif %}
-                    <p style="margin: 0 0 5px 0; color: #777777;">{{ global.foundation_name }}</p>
-                    <p style="margin: 0; color: #777777;">{{ global.footer_text|safe }}</p>
+                    <p style="margin: 0 0 5px 0; color: #777777;">Human Rights Foundation</p>
+                    <p style="margin: 0; color: #777777;">© 2025 Human Rights Foundation. All rights reserved.</p>
                 </td>
             </tr>
         </table>

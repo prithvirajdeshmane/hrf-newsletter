@@ -29,7 +29,7 @@ hrf-newsletter/
 ├── templates/
 │   └── newsletter_template.html        # Jinja2 newsletter template
 ├── data/
-│   └── brand_information.json         # Brand configuration (foundation name, footer, logo)
+
 ├── images/
 │   ├── global/                        # Global images (logos, etc.)
 │   └── {geo}/                         # Geo-specific images
@@ -170,7 +170,7 @@ pip install -r requirements.txt
 ---
 
 ### 2. **Prepare Your JSON Configuration**
-- Open the brand configuration file (`data/brand_information.json`).
+- The foundation name, footer text, and logo are hardcoded in the newsletter template.
 - Add a new block for your country using the geo code.
 
 Each geo must include the following:
@@ -275,7 +275,7 @@ You will get:
 ### 2a. Global Logo Banner
 - The newsletter includes a banner at the top with your logo centered.
 - Place your logo at `images/brand/HRF-Logo.png` (PNG recommended, max width 200px for best appearance).
-- **Important**: Ensure the `logo_url` field is defined in your `brand_information.json`:
+- **Important**: The HRF logo is hardcoded in the template at `static/images/brand/HRF-Logo.png`:
   ```json
   "global": {
     "foundation_name": "Global Human Rights Foundation",
@@ -342,7 +342,7 @@ You will get:
 
 #### Mailchimp Template Issues
 - If images don't appear in uploaded Mailchimp templates:
-  - Check that the `logo_url` field is defined in `brand_information.json`.
+  - Check that the logo file exists at `static/images/brand/HRF-Logo.png`.
   - Verify that image files exist in the expected folders before running the script.
   - Review the console output for successful image uploads and URL replacements.
 

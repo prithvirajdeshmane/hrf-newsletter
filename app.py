@@ -12,7 +12,7 @@ import re
 
 # Constants
 GENERATED_NEWSLETTERS_DIR = "generated_newsletters"
-BRAND_INFO_FILE = "data/brand_information.json"
+
 DEBUG_LOGGING = False  # Console logging enabled for debugging
 
 # Initialize the Flask application
@@ -72,16 +72,7 @@ def _load_country_data(country_key: str) -> tuple[Dict[str, Any], str, List[Dict
     return country_info, country_name, languages
 
 
-def _load_brand_info() -> Dict[str, Any]:
-    """
-    Load brand information from JSON file.
-    
-    Returns:
-        Brand information dictionary
-    """
-    brand_info_path = Path(BRAND_INFO_FILE)
-    with brand_info_path.open('r', encoding='utf-8') as f:
-        return json.load(f)
+
 
 
 def _validate_form_data(form_data: Dict[str, Any]) -> None:
@@ -99,7 +90,7 @@ def _validate_form_data(form_data: Dict[str, Any]) -> None:
         raise ValueError(f"Hero data must be a dictionary, got {type(hero_data).__name__}: {hero_data}")
 
 
-def _create_template_data(form_data: Dict[str, Any], country_name: str, language_info: Dict[str, Any], brand_info: Dict[str, Any]) -> Dict[str, Any]:
+def _create_template_data(form_data: Dict[str, Any], country_name: str, language_info: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create template data for newsletter generation.
     
@@ -107,7 +98,6 @@ def _create_template_data(form_data: Dict[str, Any], country_name: str, language
         form_data: User form data
         country_name: Name of the country
         language_info: Language information
-        brand_info: Brand information
         
     Returns:
         Template data dictionary
@@ -125,11 +115,6 @@ def _create_template_data(form_data: Dict[str, Any], country_name: str, language
         'lang': language_code,
         'metadata': {
             'country_name': country_name
-        },
-        'global': {
-            'foundation_name': brand_info['foundation_name'],
-            'footer_text': brand_info['footer_text'],
-            'logo_url': brand_info['logo_url']
         },
         'hero': {
             'image_url': hero_data.get('image', ''),
@@ -194,7 +179,7 @@ def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
     _validate_form_data(form_data)
     country_key = form_data['country']
     country_info, country_name, languages = _load_country_data(country_key)
-    brand_info = _load_brand_info()
+
     
     # Create output directory
     country_dir_name = _slugify(country_key)
@@ -205,7 +190,7 @@ def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
     
     # Generate one newsletter for each language
     for language_info in languages.values():
-        template_data = _create_template_data(form_data.copy(), country_name, language_info, brand_info)
+        template_data = _create_template_data(form_data.copy(), country_name, language_info)
         
         # Generate safe filename
         language_code = language_info.get('languageCode', 'en')
