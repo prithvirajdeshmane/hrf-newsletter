@@ -1,6 +1,6 @@
-# Global Human Rights Foundation Newsletter Generation Tool
+# HRF Newsletter Generator
 
-A Python web-based tool for generating localized, multilingual email newsletters with RTL language support, image validation, and user-friendly web interface.
+A comprehensive web-based tool for generating localized, multilingual email newsletters with automatic Mailchimp integration, RTL language support, and professional template management.
 
 ---
 
@@ -10,6 +10,7 @@ A Python web-based tool for generating localized, multilingual email newsletters
 - [Setup](#setup)
 - [Features](#features)
 - [Quick Start Guide](#quick-start-guide)
+- [Mailchimp Integration](#mailchimp-integration)
 - [Detailed Usage](#detailed-usage)
 - [Troubleshooting](#troubleshooting)
 - [Reference](#reference)
@@ -19,20 +20,26 @@ A Python web-based tool for generating localized, multilingual email newsletters
 ## Project Structure
 ```
 hrf-newsletter/
+├── app.py                             # Flask web application
 ├── scripts/
-│   ├── generate_newsletter.py          # Main script
-│   ├── mailchimp_template_upload.py    # Template upload to Mailchimp
-│   ├── mailchimp_image_upload.py       # Image upload to Mailchimp
-│   ├── image_utils.py                  # Image compression utilities
-│   └── utils/
-│       └── test_mailchimp_connection.py # Connection testing utility
+│   ├── DataManager.py                 # Country/language data management
+│   ├── mailchimp_newsletter_uploader.py # Complete newsletter upload workflow
+│   ├── mailchimp_image_uploader.py    # Image upload to Mailchimp
+│   ├── image_utils.py                 # Image processing utilities
+│   ├── translation_service.py         # Google Translate integration
+│   └── env_utils.py                   # Environment variable utilities
 ├── templates/
-│   └── newsletter_template.html        # Jinja2 newsletter template
+│   ├── index.html                     # Country selection page
+│   ├── build-newsletter.html          # Newsletter builder interface
+│   ├── newsletters-generated.html     # Generation results page
+│   ├── newsletters-uploaded.html      # Upload success page
+│   └── newsletter_template.html       # Email template
+├── static/
+│   ├── scripts/                       # Frontend JavaScript
+│   ├── styles/                        # CSS stylesheets
+│   └── images/brand/                  # Brand assets (logo)
 ├── data/
-
-├── images/
-│   ├── global/                        # Global images (logos, etc.)
-│   └── {geo}/                         # Geo-specific images
+│   └── country_languages.json         # Country/language configuration
 ├── generated_newsletters/             # Output directory (auto-created)
 ├── requirements.txt                   # Python dependencies
 ├── .env                              # Environment variables (create this)
@@ -72,25 +79,25 @@ hrf-newsletter/
 
 ## Features
 
-- **Web-Based Interface**: User-friendly browser interface for building newsletters with drag-and-drop functionality.
+- **Web-Based Interface**: User-friendly browser interface for building newsletters with intuitive form controls.
 - **RTL Language Support**: Full support for Right-to-Left languages (Arabic, Hebrew, Persian) with proper text direction.
 - **Multi-Language Support**: Supports multiple languages per country with localized country names.
-- **Unicode Compatibility**: Handles Arabic text and other Unicode characters correctly on all platforms.
-- **Dynamic Image Path Handling**: Automatically adjusts image paths for correct local viewing.
-- **Mailchimp Integration**: 
-  - **Template Upload**: Automatically uploads each generated newsletter as a new template in Mailchimp.
-  - **Comprehensive Image Upload**: Automatically uploads ALL images from `images/brand/` and `images/{geo}/` folders to Mailchimp Content Studio, regardless of whether they're referenced in the JSON data.
-  - **Image Compression**: Automatically compresses images larger than 1MB using Pillow before upload.
-  - **Smart URL Replacement**: Replaces all local image URLs in the HTML with Mailchimp-hosted URLs, handling multiple URL formats (`./images/...`, `/images/...`, `images/...`).
-  - **Global Image Support**: Ensures global images (like logos) are included in every newsletter upload.
-- **Error Handling**: Halts on any image or template upload failure with a descriptive error message.
-- **Upload Summary**: Displays a summary of all successfully uploaded newsletters at the end of each run.
+- **Google Translate Integration**: Automatic translation of newsletter content for non-English languages.
+- **Image Processing**: Automatic image compression and optimization for web delivery.
+- **Complete Mailchimp Integration**: 
+  - **Automated Workflow**: Upload images → Replace URLs → Create templates in one click
+  - **Image Upload**: Automatically uploads user images to Mailchimp Content Studio with 1MB compression
+  - **URL Substitution**: Replaces local image paths with Mailchimp URLs in newsletter HTML
+  - **Template Creation**: Uploads processed newsletters as ready-to-use Mailchimp templates
+  - **Session Management**: Tracks uploads per user session for proper isolation
+- **Professional UI**: Modern, responsive design with progress indicators and error handling
+- **File Management**: Organized output with `mailchimp_versions` folders for processed templates
 
 ## Quick Start Guide
 
-1. **Start the web server**:
+1. **Start the web application**:
    ```bash
-   python scripts/generate_newsletter.py
+   python app.py
    ```
 
 2. **Open your browser** to `http://localhost:5000`
@@ -102,9 +109,34 @@ hrf-newsletter/
    - Add call-to-action buttons
 
 4. **Generate newsletters**:
-   - Click "Generate Newsletter"
-   - Downloads will be created for each language supported by the selected country
+   - Click "Generate Newsletter(s)"
+   - Newsletters are created for each language supported by the selected country
    - Files are saved in `generated_newsletters/{Country_Name}/`
+
+5. **Upload to Mailchimp** (optional):
+   - Click "Upload to Mailchimp" on the results page
+   - Images are automatically uploaded and URLs replaced
+   - Newsletter templates are created in your Mailchimp account
+
+## Mailchimp Integration
+
+The application provides seamless integration with Mailchimp Marketing API:
+
+### **Automated Upload Workflow**
+1. **Image Processing**: User-uploaded images are compressed (if >1MB) and uploaded to Mailchimp Content Studio
+2. **URL Substitution**: Local image references in HTML are replaced with Mailchimp-hosted URLs
+3. **Template Creation**: Processed newsletters are uploaded as templates with descriptive names
+
+### **Template Naming Convention**
+Templates are named using the format: `{Country}_{Language}_{Date}_{Time}`
+- Example: `Switzerland_French_081425_160015`
+
+### **File Organization**
+- Original newsletters: `generated_newsletters/{Country}/`
+- Mailchimp-ready versions: `generated_newsletters/{Country}/mailchimp_versions/`
+
+### **Session Management**
+Each user session maintains isolated image uploads and processing to prevent conflicts between concurrent users.
 
 ## Detailed Usage
 
