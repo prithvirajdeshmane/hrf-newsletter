@@ -153,8 +153,8 @@ class NewsletterTranslationService:
                 
                 translated_text = result['translatedText']
                 
-                # Decode HTML entities (e.g., &#39; -> ')
-                translated_text = html.unescape(translated_text)
+                # Decode HTML entities from the translation
+                translated_text = html.unescape(result['translatedText'])
                 
                 # Cache the successful translation
                 self._cache_translation(text, target_language, translated_text)
