@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
             imageAlt: document.getElementById('heroImageAlt')?.value.trim() || '',
             headline: document.getElementById('heroHeadline')?.value.trim() || '',
             description: document.getElementById('heroDescription')?.value.trim() || '',
-            learnMoreUrl: document.getElementById('learnMoreUrl')?.value.trim() || ''
+            url: document.getElementById('learnMoreUrl')?.value.trim() || ''
         };
     }
 

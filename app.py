@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, render_template, session, redirect, u
 from scripts.DataManager import DataManager
 from scripts.env_utils import credentials_present, save_credentials
 from scripts.image_utils import ImageProcessor
+from scripts.translation_service import NewsletterTranslationService
 import threading
 import webbrowser
 import os
@@ -21,6 +22,8 @@ app = Flask(__name__)
 app.secret_key = 'hrf-newsletter-generator-secret-key-2025'  # Required for sessions
 # Create a DataManager instance for handling country data
 data_manager = DataManager()
+# Initialize translation service
+translation_service = NewsletterTranslationService()
 
 def map_story_fields(story: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -100,7 +103,7 @@ def _validate_form_data(form_data: Dict[str, Any]) -> None:
         raise ValueError(f"Hero data must be a dictionary, got {type(hero_data).__name__}: {hero_data}")
 
 
-def _create_template_data(form_data: Dict[str, Any], country_name: str, language_info: Dict[str, Any]) -> Dict[str, Any]:
+def _create_template_data(form_data: Dict[str, Any], country_name: str, language_info: Dict[str, Any], country_data: Dict[str, Any] = None) -> Dict[str, Any]:
     """
     Create template data for newsletter generation.
     
@@ -108,6 +111,7 @@ def _create_template_data(form_data: Dict[str, Any], country_name: str, language
         form_data: User form data
         country_name: Name of the country
         language_info: Language information
+        country_data: Full country data for translation context
         
     Returns:
         Template data dictionary
@@ -116,26 +120,53 @@ def _create_template_data(form_data: Dict[str, Any], country_name: str, language
     hero_ctas = form_data.get('ctas', [])
     user_stories = form_data.get('stories', [])
     
-    language_code = language_info.get('code', 'en')
-    script_direction = language_info.get('scriptDirection', 'ltr')
-    
-    return {
-        'country': form_data['country'],
-        'dir': script_direction,
-        'lang': language_code,
-        'metadata': {
-            'country_name': country_name
-        },
-        'hero': {
-            'image_url': hero_data.get('image', ''),
-            'image_alt': hero_data.get('imageAlt', ''),
-            'headline': hero_data.get('headline', ''),
-            'description': hero_data.get('description', ''),
-            'cta_learn_more_url': hero_data.get('learnMoreUrl', ''),
-            'ctas_buttons': hero_ctas
-        },
-        'stories': [map_story_fields(story) for story in user_stories]
+    # Map hero fields to template-expected names
+    hero = {
+        'image_url': hero_data.get('image', ''),
+        'image_alt': hero_data.get('imageAlt', ''),
+        'headline': hero_data.get('headline', ''),
+        'description': hero_data.get('description', ''),
+        'url': hero_data.get('url', ''),
+        'cta': hero_data.get('cta'),  # CTA structure is already correct
+        'learn_more_text': 'Learn more'  # Default text
     }
+    
+    # Map story fields to template-expected names
+    stories = [map_story_fields(story) for story in user_stories]
+    
+    # Create base template data
+    template_data = {
+        'hero': hero,
+        'stories': stories,
+        'ctas': hero_ctas,
+        'country': country_name,
+        'lang': language_info.get('code', 'en'),
+        'dir': language_info.get('scriptDirection', 'ltr')
+    }
+    
+    # Apply translations if not English
+    target_language = language_info.get('code', 'en')
+    if target_language != 'en' and translation_service.is_available():
+        try:
+            # Translate the content
+            translated_content = translation_service.translate_newsletter_content(
+                template_data, target_language, country_data or {}
+            )
+            template_data.update(translated_content)
+            
+            # Use country display name if available
+            if 'country_display_name' in translated_content:
+                template_data['country'] = translated_content['country_display_name']
+
+            # Update hero with translated 'Learn more' text
+            if template_data.get('static_translations', {}).get('learn_more'):
+                hero['learn_more_text'] = template_data['static_translations']['learn_more']
+                
+        except Exception as e:
+            print(f"WARNING: Translation failed for {target_language}: {e}")
+            print("Continuing with original English content...")
+    
+    return template_data
 
 
 def _slugify(text: str) -> str:
@@ -219,8 +250,8 @@ def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
     for language_info in languages:
         language_code = language_info.get('code', 'en')
         
-        # Create template data for this language
-        template_data = _create_template_data(form_data, country_name, language_info)
+        # Create template data for this language with translation support
+        template_data = _create_template_data(form_data, country_name, language_info, country_info)
         
         # Generate safe filename
         safe_filename = _generate_safe_filename(country_key, language_code, timestamp)

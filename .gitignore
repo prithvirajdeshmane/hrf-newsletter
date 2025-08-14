@@ -4,6 +4,9 @@
 # Ignore user images
 /static/images/user-images/
 
+# Ignore secrets
+/secrets/*
+
 # Python bytecode/cache
 __pycache__/
 scripts/__pycache__/
