@@ -121,6 +121,37 @@ def clear_generated_newsletters(confirm: bool = False) -> int:
     return removed_count
 
 
+def clear_user_images() -> int:
+    """
+    Clear user-uploaded images from static/images/user-images directory.
+    
+    Returns:
+        int: Number of files removed
+    """
+    removed_count = 0
+    project_root = Path(__file__).parent
+    user_images_dir = project_root / "static" / "images" / "user-images"
+    
+    if not user_images_dir.exists():
+        return 0
+    
+    print("🖼️  Clearing user-uploaded images...")
+    
+    try:
+        # Count files before removal
+        for file_path in user_images_dir.rglob("*"):
+            if file_path.is_file():
+                removed_count += 1
+        
+        shutil.rmtree(user_images_dir)
+        print(f"   Removed {removed_count} user image files")
+    except Exception as e:
+        print(f"   ⚠️  Failed to remove user images directory: {e}")
+        removed_count = 0
+    
+    return removed_count
+
+
 def show_browser_cache_instructions() -> None:
     """Display instructions for clearing browser cache."""
     print("\n🌐 Browser Cache Instructions:")
@@ -144,6 +175,10 @@ def main() -> None:
     # Clear Flask cache
     flask_cache_removed = clear_flask_cache()
     total_removed += flask_cache_removed
+    
+    # Clear user-uploaded images
+    user_images_removed = clear_user_images()
+    total_removed += user_images_removed
     
     # Optionally clear generated newsletters
     newsletters_removed = clear_generated_newsletters()
