@@ -119,11 +119,44 @@ body {
     border-left: 3px solid #28a745;
     font-family: 'Courier New', monospace;
     font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.file-item:hover {
+    background: rgba(40, 167, 69, 0.15);
+    transform: translateX(5px);
 }
 
 .file-item i {
     color: #28a745;
     font-size: 1.1rem;
+}
+
+/* Preview Link Styles */
+.preview-link {
+    color: #333;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    transition: all 0.2s ease;
+}
+
+.preview-link:hover {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.preview-icon {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.preview-link:hover .preview-icon {
+    opacity: 1;
+    color: #667eea;
 }
 
 /* Upload Container */

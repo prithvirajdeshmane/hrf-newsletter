@@ -43,12 +43,18 @@
             
             {% if filenames %}
             <div class="files-section">
-                <h3>File names:</h3>
+                <h3>Generated Newsletters:</h3>
                 <ul class="files-list">
                     {% for filename in filenames %}
                         <li class="file-item">
                             <i class="fas fa-file-alt"></i>
-                            <span>{{ filename }}</span>
+                            <a href="/preview/newsletter/{{ country|lower|replace(' ', '_') }}/{{ filename }}" 
+                               target="_blank" 
+                               class="preview-link"
+                               title="Click to preview {{ filename }} in a new tab">
+                                {{ filename }}
+                                <i class="fas fa-external-link-alt preview-icon"></i>
+                            </a>
                         </li>
                     {% endfor %}
                 </ul>

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, session, redirect, url_for
+from flask import Flask, jsonify, request, render_template, session, redirect, url_for, send_file, abort
 from scripts.DataManager import DataManager
 from scripts.image_utils import ImageProcessor
 from scripts.translation_service import NewsletterTranslationService
@@ -460,6 +460,61 @@ def newsletters_generated():
                          total_newsletters=results['total_newsletters'],
                          languages=results['languages'],
                          filenames=results['filenames'])
+
+@app.route('/preview/newsletter/<path:filename>')
+def preview_newsletter(filename):
+    """
+    Serve newsletter HTML files for preview with strict security validation.
+    
+    Security measures:
+    - Only serves files from generated_newsletters directory
+    - Only allows .html files
+    - Validates file path to prevent directory traversal
+    - Returns 404 for any invalid or non-existent files
+    """
+    try:
+        # Security: Only allow .html files
+        if not filename.endswith('.html'):
+            abort(404)
+        
+        # Security: Prevent directory traversal attacks
+        if '..' in filename or filename.startswith('/') or '\\' in filename:
+            abort(404)
+        
+        # Construct safe file path within generated_newsletters directory
+        from pathlib import Path
+        from config import GENERATED_NEWSLETTERS_DIR
+        
+        safe_path = Path(GENERATED_NEWSLETTERS_DIR) / filename
+        
+        # Security: Ensure the resolved path is still within our directory
+        try:
+            safe_path = safe_path.resolve()
+            base_dir = Path(GENERATED_NEWSLETTERS_DIR).resolve()
+            if not str(safe_path).startswith(str(base_dir)):
+                abort(404)
+        except (OSError, ValueError):
+            abort(404)
+        
+        # Check if file exists
+        if not safe_path.exists() or not safe_path.is_file():
+            abort(404)
+        
+        # Read the HTML file and fix relative image paths for preview
+        with open(safe_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        # Fix relative image paths to work in preview context
+        # Convert ../../static/ to /static/ for Flask static file serving
+        html_content = html_content.replace('../../static/', '/static/')
+        
+        # Return the modified HTML content
+        from flask import Response
+        return Response(html_content, mimetype='text/html')
+        
+    except Exception:
+        # Any unexpected error should return 404 for security
+        abort(404)
 
 @app.route('/api/upload-newsletters', methods=['POST'])
 def api_upload_newsletters():
