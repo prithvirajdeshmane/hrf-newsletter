@@ -1,6 +1,6 @@
 # HRF Newsletter Generator
 
-A comprehensive web-based tool for generating localized, multilingual email newsletters with automatic Mailchimp integration, RTL language support, and professional template management.
+A comprehensive web-based tool for generating localized, multilingual email newsletters with automatic Mailchimp integration, RTL language support, newsletter preview functionality, and professional template management.
 
 ---
 
@@ -21,13 +21,16 @@ A comprehensive web-based tool for generating localized, multilingual email news
 ```
 hrf-newsletter/
 ├── app.py                             # Flask web application
+├── config.py                          # Centralized configuration
 ├── scripts/
 │   ├── DataManager.py                 # Country/language data management
 │   ├── mailchimp_newsletter_uploader.py # Complete newsletter upload workflow
 │   ├── mailchimp_image_uploader.py    # Image upload to Mailchimp
 │   ├── image_utils.py                 # Image processing utilities
 │   ├── translation_service.py         # Google Translate integration
-│   └── env_utils.py                   # Environment variable utilities
+│   ├── env_utils.py                   # Environment variable utilities
+│   └── utils/
+│       └── country_newsletter_path.py # OOP path management utility
 ├── templates/
 │   ├── index.html                     # Country selection page
 │   ├── build-newsletter.html          # Newsletter builder interface
@@ -47,8 +50,9 @@ hrf-newsletter/
 ```
 
 ## Prerequisites
-- Python 3.7 or higher
+- Python 3.11 or higher (recommended)
 - Mailchimp Marketing API account and credentials
+- Google Cloud Translation API credentials (optional, for multi-language support)
 - Internet connection for Mailchimp integration
 
 ## Setup
@@ -79,11 +83,12 @@ hrf-newsletter/
 
 ## Features
 
-- **Web-Based Interface**: User-friendly browser interface for building newsletters with intuitive form controls.
-- **RTL Language Support**: Full support for Right-to-Left languages (Arabic, Hebrew, Persian) with proper text direction.
-- **Multi-Language Support**: Supports multiple languages per country with localized country names.
-- **Google Translate Integration**: Automatic translation of newsletter content for non-English languages.
-- **Image Processing**: Automatic image compression and optimization for web delivery.
+- **Web-Based Interface**: User-friendly browser interface for building newsletters with intuitive form controls
+- **Newsletter Preview**: Click newsletter names to preview in new tabs before Mailchimp upload
+- **RTL Language Support**: Full support for Right-to-Left languages (Arabic, Hebrew, Persian) with proper text direction
+- **Multi-Language Support**: Supports multiple languages per country with localized country names
+- **Google Translate Integration**: Automatic translation of newsletter content for non-English languages
+- **Image Processing**: Automatic image compression and optimization for web delivery
 - **Complete Mailchimp Integration**: 
   - **Automated Workflow**: Upload images → Replace URLs → Create templates in one click
   - **Image Upload**: Automatically uploads user images to Mailchimp Content Studio with 1MB compression
@@ -91,7 +96,8 @@ hrf-newsletter/
   - **Template Creation**: Uploads processed newsletters as ready-to-use Mailchimp templates
   - **Session Management**: Tracks uploads per user session for proper isolation
 - **Professional UI**: Modern, responsive design with progress indicators and error handling
-- **File Management**: Organized output with `mailchimp_versions` folders for processed templates
+- **Secure Architecture**: Path validation, directory traversal prevention, and production-ready security
+- **File Management**: Organized output with readable filenames: `Country_Language_MonthDay_Time.html`
 
 ## Quick Start Guide
 
@@ -113,7 +119,12 @@ hrf-newsletter/
    - Newsletters are created for each language supported by the selected country
    - Files are saved in `generated_newsletters/{Country_Name}/`
 
-5. **Upload to Mailchimp** (optional):
+5. **Preview newsletters** (new feature):
+   - Click on newsletter names to preview in new browser tabs
+   - Verify content, formatting, and translations before upload
+   - Images display correctly in preview mode
+
+6. **Upload to Mailchimp** (optional):
    - Click "Upload to Mailchimp" on the results page
    - Images are automatically uploaded and URLs replaced
    - Newsletter templates are created in your Mailchimp account
@@ -128,8 +139,9 @@ The application provides seamless integration with Mailchimp Marketing API:
 3. **Template Creation**: Processed newsletters are uploaded as templates with descriptive names
 
 ### **Template Naming Convention**
-Templates are named using the format: `{Country}_{Language}_{Date}_{Time}`
-- Example: `Switzerland_French_081425_160015`
+Templates are named using the format: `{Country}_{Language}_{MonthDay}_{Time}`
+- Example: `Switzerland_French_Aug15_1604`
+- Readable format with abbreviated month names for better usability
 
 ### **File Organization**
 - Original newsletters: `generated_newsletters/{Country}/`
@@ -186,8 +198,13 @@ Examples:
 
 ### Dependencies
 
-Install the required Python packages:
+The project requires the following Python packages (see `requirements.txt`):
+- **Flask==2.3.3** - Web framework
+- **python-dotenv==1.0.1** - Environment variable management
+- **requests==2.31.0** - HTTP requests for Mailchimp API
+- **google-cloud-translate==2.0.1** - Google Translate API integration
 
+Install all dependencies:
 ```bash
 pip install -r requirements.txt
 ```
