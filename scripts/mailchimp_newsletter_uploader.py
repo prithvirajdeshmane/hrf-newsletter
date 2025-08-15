@@ -189,23 +189,23 @@ class MailchimpNewsletterUploader:
         """Find newsletter HTML files for the specified country."""
         newsletter_files = []
         
-        # Check generated_newsletters folder
-        country_folder = Path(f"generated_newsletters/{country}")
+        # Check generated_newsletters folder with slugified country name
+        from scripts.utils.country_newsletter_path import CountryNewsletterPath
+        country_dir = CountryNewsletterPath(country).ensure_newsletter_dir()
         
-        if country_folder.exists():
-            for html_file in country_folder.glob("newsletter_*.html"):
-                newsletter_files.append({
-                    'filename': html_file.name,
-                    'path': str(html_file),
-                    'country': country
-                })
+        for html_file in country_dir.glob("*.html"):
+            newsletter_files.append({
+                'filename': html_file.name,
+                'path': str(html_file),
+                'country': country
+            })
         
         return newsletter_files
     
     def _create_mailchimp_versions_folder(self, country: str) -> str:
         """Create mailchimp_versions folder for the country."""
-        mailchimp_folder = Path(f"generated_newsletters/{country}/mailchimp_versions")
-        mailchimp_folder.mkdir(parents=True, exist_ok=True)
+        from scripts.utils.country_newsletter_path import CountryNewsletterPath
+        mailchimp_folder = CountryNewsletterPath(country).ensure_mailchimp_dir()
         return str(mailchimp_folder)
     
     def _process_single_newsletter(self, newsletter_file: Dict[str, str], url_mapping: Dict[str, str], output_folder: str) -> Dict[str, Any]:
@@ -276,27 +276,10 @@ class MailchimpNewsletterUploader:
         return updated_html
     
     def _generate_template_filename(self, original_filename: str) -> str:
-        """Generate new filename with timestamp."""
-        now = datetime.now()
-        date_str = now.strftime("%m%d%y")
-        time_str = now.strftime("%H%M%S")
-        
-        # Extract language from filename
-        if "_en_" in original_filename:
-            language = "English"
-        elif "_fr_" in original_filename:
-            language = "French"
-        else:
-            language = "Unknown"
-        
-        # Extract country from filename
-        parts = original_filename.replace("newsletter_", "").split('_')
-        if len(parts) >= 2:
-            country = "_".join(parts[:2])  # e.g., "Ivory_Coast"
-        else:
-            country = "Unknown"
-        
-        return f"{country}_{language}_{date_str}_{time_str}.html"
+        """Generate new filename - now just reuses the same name as original."""
+        # Remove any path components and return just the filename
+        from pathlib import Path
+        return Path(original_filename).name
     
     def _upload_template_to_mailchimp(self, template_name: str, html_content: str) -> Dict[str, Any]:
         """Upload processed newsletter as Mailchimp template."""

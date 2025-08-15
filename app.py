@@ -15,7 +15,7 @@ import re
 import secrets
 
 # Constants
-GENERATED_NEWSLETTERS_DIR = "generated_newsletters"
+from config import GENERATED_NEWSLETTERS_DIR
 
 DEBUG_LOGGING = False  # Console logging enabled for debugging
 
@@ -172,37 +172,6 @@ def _create_template_data(form_data: Dict[str, Any], country_name: str, language
     return template_data
 
 
-def _slugify(text: str) -> str:
-    """
-    Convert a string into a URL- and filename-safe slug.
-
-    Replaces spaces with underscores and removes characters that are invalid
-    for Windows filenames.
-
-    Args:
-        text: The string to slugify.
-
-    Returns:
-        The slugified string.
-    """
-    text = text.replace(' ', '_')
-    return re.sub(r'[<>:"/\\|?*]', '_', text)
-
-
-def _generate_safe_filename(country_key: str, language_code: str, timestamp: str) -> str:
-    """
-    Generate a safe filename for Windows by sanitizing invalid characters.
-    
-    Args:
-        country_key: Country identifier
-        language_code: Language code
-        timestamp: Timestamp string
-        
-    Returns:
-        Sanitized filename
-    """
-    safe_country_key = _slugify(country_key)
-    return f"newsletter_{safe_country_key}_{language_code}_{timestamp}.html"
 
 
 def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
@@ -247,6 +216,10 @@ def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
         if story_key in saved_images:
             story['image'] = saved_images[story_key]
     
+    # Use OOP path utility for country newsletter directory and filename
+    from scripts.utils.country_newsletter_path import CountryNewsletterPath
+    country_path = CountryNewsletterPath(country_key)
+
     generated_files = []
     timestamp = datetime.now().strftime("%m%d%y_%H%M%S")
     
@@ -256,15 +229,13 @@ def generate_newsletter_templates(form_data: Dict[str, Any]) -> List[str]:
         # Create template data for this language with translation support
         template_data = _create_template_data(form_data, country_name, language_info, country_info)
         
-        # Generate safe filename
-        safe_filename = _generate_safe_filename(country_key, language_code, timestamp)
-        
-        # Create country directory
-        country_dir = Path(GENERATED_NEWSLETTERS_DIR) / country_key
-        country_dir.mkdir(parents=True, exist_ok=True)
+        # Ensure country newsletter directory exists
+        country_dir = country_path.ensure_newsletter_dir()
         
         # Generate newsletter file
-        file_path = country_dir / safe_filename
+        language_name = language_info.get('name', 'Unknown')
+        filename = country_path.get_newsletter_filename(language_name, timestamp)
+        file_path = country_dir / filename
         
         # Render template using Flask's render_template
         template_html = render_template('newsletter_template.html', **template_data)
@@ -513,8 +484,9 @@ def api_upload_newsletters():
         # Build file paths from session data
         country = newsletter_results['country']
         filenames = newsletter_results['filenames']
-        country_dir = Path(GENERATED_NEWSLETTERS_DIR) / country
-        
+        from scripts.utils.country_newsletter_path import CountryNewsletterPath
+        country_dir = CountryNewsletterPath(country).newsletter_dir()
+    
         newsletter_files = []
         for filename in filenames:
             file_path = country_dir / filename
@@ -586,12 +558,8 @@ def open_browser() -> None:
 
 if __name__ == "__main__":
     # Get configuration from environment variables
+    host = os.environ.get('FLASK_HOST', '0.0.0.0')
+    port = int(os.environ.get('FLASK_PORT', 5000))
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-    port = int(os.environ.get('PORT', 5000))
-    host = os.environ.get('HOST', '0.0.0.0')
-    
-    # Only auto-open browser in development
-    if debug_mode and os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        threading.Timer(1.0, open_browser).start()
     
     app.run(debug=debug_mode, host=host, port=port)
