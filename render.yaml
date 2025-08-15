@@ -22,7 +22,3 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
-    disk:
-      name: hrf-newsletter-disk
-      mountPath: /opt/render/project/src/generated_newsletters
-      sizeGB: 1
