@@ -20,6 +20,7 @@ import hashlib
 import logging
 from google.cloud import translate_v2 as translate
 from google.api_core import exceptions as google_exceptions
+from dotenv import load_dotenv
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -46,6 +47,9 @@ class NewsletterTranslationService:
             project_id: Google Cloud project ID (optional, can be set via environment)
             credentials_path: Path to service account JSON file (optional, can be set via environment)
         """
+        # Load environment variables from .env file
+        load_dotenv()
+        
         self.project_id = project_id or os.getenv('GOOGLE_CLOUD_PROJECT_ID')
         self.credentials_path = credentials_path or os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
         

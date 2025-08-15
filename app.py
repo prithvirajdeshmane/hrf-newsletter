@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 from scripts.DataManager import DataManager
-from scripts.env_utils import credentials_present, save_credentials
 from scripts.image_utils import ImageProcessor
 from scripts.translation_service import NewsletterTranslationService
 from scripts.mailchimp_image_uploader import MailchimpImageUploader
@@ -299,15 +298,14 @@ def index() -> str:
     Root endpoint serving the index.html page with a dropdown of countries.
     
     Returns:
-        Rendered HTML page with country dropdown and credential status
+        Rendered HTML page with country dropdown
     """
     try:
         countries = data_manager.get_countries()
-        creds_ok = credentials_present()
-        return render_template("index.html", countries=countries, creds_ok=creds_ok)
+        return render_template("index.html", countries=countries)
     except Exception as e:
         # Fallback to empty countries if data loading fails
-        return render_template("index.html", countries={}, creds_ok=False, error=str(e))
+        return render_template("index.html", countries={}, error=str(e))
 
 @app.route('/api/select-country', methods=['POST'])
 def api_select_country():
@@ -572,47 +570,6 @@ def newsletters_uploaded():
                          successful_uploads=upload_results['successful_uploads'],
                          failed_uploads=upload_results['failed_uploads'],
                          uploaded_files=upload_results['uploaded_files'])
-
-@app.route("/api/save-credentials", methods=["POST"])
-def api_save_credentials():
-    """
-    API endpoint to save Mailchimp credentials to .env file.
-    
-    Expects JSON: {"api_key": str, "server_prefix": str}
-    
-    Returns:
-        JSON response with success status or error message
-    """
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"success": False, "error": "No data received"}), 400
-            
-        api_key = data.get("api_key", "").strip()
-        server_prefix = data.get("server_prefix", "").strip()
-        
-        if not api_key or not server_prefix:
-            return jsonify({"success": False, "error": "Both API key and server prefix are required"}), 400
-            
-        save_credentials(api_key, server_prefix)
-        return jsonify({"success": True, "message": "Credentials saved successfully"})
-        
-    except Exception as e:
-        return jsonify({"success": False, "error": f"Failed to save credentials: {str(e)}"}), 500
-
-@app.route("/api/check-credentials", methods=["GET"])
-def api_check_credentials():
-    """
-    API endpoint to check if Mailchimp credentials exist and are non-empty in .env.
-    
-    Returns:
-        JSON response with credential presence status
-    """
-    try:
-        has_credentials = credentials_present()
-        return jsonify({"hasCredentials": has_credentials, "success": True})
-    except Exception as e:
-        return jsonify({"hasCredentials": False, "success": False, "error": str(e)}), 500
 
 def open_browser() -> None:
     """
