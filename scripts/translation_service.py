@@ -50,8 +50,9 @@ class NewsletterTranslationService:
         # Load environment variables from .env file
         load_dotenv()
         
-        self.project_id = project_id or os.getenv('GOOGLE_CLOUD_PROJECT_ID')
+        self.project_id = project_id
         self.credentials_path = credentials_path or os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        self.credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
         
         # Initialize translation client
         self._client = None
@@ -72,8 +73,24 @@ class NewsletterTranslationService:
     def _initialize_client(self) -> None:
         """Initialize Google Translate client with proper authentication."""
         try:
-            if self.credentials_path and os.path.exists(self.credentials_path):
+            # Handle credentials for production deployment
+            if self.credentials_json:
+                # Production: Use JSON string from environment variable
+                import json
+                import tempfile
+                credentials_dict = json.loads(self.credentials_json)
+                
+                # Create temporary file for credentials
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+                    json.dump(credentials_dict, temp_file)
+                    temp_credentials_path = temp_file.name
+                
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = temp_credentials_path
+                self._temp_credentials_file = temp_credentials_path
+            elif self.credentials_path and os.path.exists(self.credentials_path):
+                # Development: Use file path
                 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = self.credentials_path
+                self._temp_credentials_file = None
             
             self._client = translate.Client()
             logger.info("Google Translate client initialized successfully")

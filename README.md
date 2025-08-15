@@ -100,7 +100,7 @@ hrf-newsletter/
    python app.py
    ```
 
-2. **Open your browser** to `http://localhost:5000`
+2. **Open your browser** to `http://localhost:5000` (development mode)
 
 3. **Build your newsletter**:
    - Select a country from the dropdown

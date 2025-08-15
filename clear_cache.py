@@ -182,7 +182,7 @@ def show_browser_cache_instructions() -> None:
     """Display instructions for clearing browser cache."""
     print("\n--- Browser Cache Instructions:")
     print("   • Hard refresh: Ctrl + F5 or Ctrl + Shift + R")
-    print("   • Clear browser cache for localhost in browser settings")
+    print("   • Clear browser cache for your domain in browser settings")
     print("   • Or open Developer Tools (F12) → Network tab → check 'Disable cache'")
 
 

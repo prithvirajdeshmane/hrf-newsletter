@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
 import re
+import secrets
 
 # Constants
 GENERATED_NEWSLETTERS_DIR = "generated_newsletters"
@@ -20,7 +21,8 @@ DEBUG_LOGGING = False  # Console logging enabled for debugging
 
 # Initialize the Flask application
 app = Flask(__name__)
-app.secret_key = 'hrf-newsletter-generator-secret-key-2025'  # Required for sessions
+# Configure secret key for sessions (production-ready)
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 # Create a DataManager instance for handling country data
 data_manager = DataManager()
 # Initialize translation service
@@ -576,11 +578,20 @@ def open_browser() -> None:
     Open the default web browser to the Flask application URL.
     
     This function is called automatically when the Flask app starts
-    to provide a better user experience.
+    to provide a better user experience in development.
     """
-    webbrowser.open_new("http://127.0.0.1:5000")
+    # Only open browser in development mode
+    if os.environ.get('FLASK_ENV') == 'development':
+        webbrowser.open_new("http://127.0.0.1:5000")
 
 if __name__ == "__main__":
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    # Get configuration from environment variables
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    port = int(os.environ.get('PORT', 5000))
+    host = os.environ.get('HOST', '0.0.0.0')
+    
+    # Only auto-open browser in development
+    if debug_mode and os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         threading.Timer(1.0, open_browser).start()
-    app.run(debug=True)
+    
+    app.run(debug=debug_mode, host=host, port=port)
