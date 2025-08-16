@@ -614,7 +614,7 @@ def open_browser() -> None:
 if __name__ == "__main__":
     # Get configuration from environment variables
     host = os.environ.get('FLASK_HOST', '0.0.0.0')
-    port = int(os.environ.get('FLASK_PORT', 5000))
+    port = int(os.environ.get('PORT', os.environ.get('FLASK_PORT', 5000)))
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
     app.run(debug=debug_mode, host=host, port=port)
