@@ -9,15 +9,25 @@ env_path = find_dotenv()
 
 def credentials_present() -> bool:
     """
-    Checks if Mailchimp credentials exist and are non-empty in the .env file.
+    Checks if Mailchimp credentials exist and are non-empty in environment variables or .env file.
 
-    This function leverages `dotenv.get_key` to safely read the values.
+    This function first checks environment variables (for production deployment),
+    then falls back to .env file for local development.
 
     Returns:
         bool: True if both MAILCHIMP_API_KEY and MAILCHIMP_SERVER_PREFIX are
               present and have non-empty values, False otherwise.
     """
-    # If the .env file doesn't exist, find_dotenv() returns an empty string.
+    import os
+    
+    # First check environment variables (production deployment)
+    api_key = os.environ.get("MAILCHIMP_API_KEY")
+    server_prefix = os.environ.get("MAILCHIMP_SERVER_PREFIX")
+    
+    if api_key and server_prefix:
+        return True
+    
+    # Fallback to .env file (local development)
     if not env_path:
         return False
 
