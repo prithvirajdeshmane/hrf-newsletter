@@ -1,131 +1,184 @@
-<!DOCTYPE html>
-<html lang="{{ lang }}" dir="{{ dir }}">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="{{ lang }}" dir="{{ dir }}" xml:lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ hero.headline }}</title>
-    <style>
-        /* Mobile-first responsive styles */
+    <style type="text/css">
+        body, html { 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            height: 100% !important; 
+            width: 100% !important; 
+            -webkit-text-size-adjust: 100%; 
+            -ms-text-size-adjust: 100%; 
+        }
+        table 
+        { 
+            border-spacing: 0; 
+            border-collapse: collapse; 
+            table-layout: fixed; 
+            margin: 0 auto; 
+        }
+        img 
+        { 
+            -ms-interpolation-mode: bicubic; 
+        }
+        .hero-img 
+        { 
+            width: 100%; 
+            max-width: 600px; 
+            height: auto; 
+            display: block; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+        }
+        .story-img { 
+            width: 100%; 
+            object-fit: cover; 
+            display: block; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .story-divider {
+            border-top: 1px solid #e0e0e0; 
+            margin: 20px 0 30px 0;
+        }
+
         @media screen and (max-width: 600px) {
-            .story-cell { 
-                display: block !important; 
-                width: 100% !important; 
-                padding: 10px 0 !important; 
+            .container-table { width: 100% !important; }
+            .stack-on-mobile { display: block !important; width: 100% !important; text-align: left !important; }
+            .reverse-on-mobile { direction: rtl; }
+            .hero-img { border-radius: 0 !important; box-shadow: none !important; }
+            .story-img { margin-top: 24px !important; }
+        }
+
+        @media only screen and (min-width: 601px) {
+            .hero-btn:hover {
+                background-color: #004d99 !important;
+                border-color: #004d99 !important;
             }
-            .story-table { 
-                width: 100% !important; 
+            .outline-btn:hover {
+                background-color: #6c757d !important;
+                color: #ffffff !important;
             }
-            .story-cell img { 
-                max-width: 100% !important; 
+            /* Story section button hover effects */
+            a[style*="background: #0d6efd"]:hover {
+                background-color: #004d99 !important;
+                border-color: #004d99 !important;
+            }
+            a[style*="background: #ffffff"]:hover {
+                background-color: #6c757d !important;
+                color: #ffffff !important;
+                border-color: #6c757d !important;
             }
         }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
-    <div style="width: 100%; background-color: #f4f4f4;">
-        <table style="margin: 0 auto; width: 100%; max-width: 600px; background-color: #ffffff; border-spacing: 0; border-bottom: 1px solid #eeeeee;">
-            <tr>
-                <td style="text-align: center; padding: 24px 0 16px 0;">
-                    <img src="../../static/images/brand/HRF-Logo.png" alt="Human Rights Foundation Logo" style="max-width: 200px; width: auto; height: auto; display: block; margin: 0 auto;">
-                </td>
-            </tr>
-        </table>
-        
-        <table style="margin: 0 auto; width: 100%; max-width: 600px; background-color: #ffffff; border-spacing: 0; color: #333333;">
-            <tr>
-                <td style="padding: 0;">
-                    <img src="{{ hero.image_url }}" alt="{{ hero.image_alt }}" style="width: 100%; max-width: 600px; height: auto; display: block;">
-                </td>
-            </tr>
-            <tr>
-                <td style="padding: 20px 30px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                    <h1 style="font-size: 24px; margin: 0 0 15px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ hero.headline }}</h1>
-                    <p style="font-size: 16px; line-height: 1.5; margin: 0 0 15px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ hero.description }}</p>
+<body style="margin: 0; padding: 0; min-width: 100%; background-color: #f2f2f2;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f2f2f2;">
+        <tr>
+            <td align="center">
+                <table class="container-table" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 600px; background-color: #ffffff;">
                     
-                    {% if hero.url %}
-                        <p style="margin: 15px 0; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                            <a href="{{ hero.url }}" target="_blank" style="color: #0055f7; text-decoration: underline; font-weight: bold; font-size: 16px;">
-                                {{ hero.learn_more_text }}
-                            </a>
-                        </p>
-                    {% endif %}
-                    
-                    {% if ctas %}
-                        <table style="width: 100%; margin-top: 20px; border-spacing: 0;">
-                            <tr>
+                    <tr>
+                        <td style="padding: 30px 0; text-align: center;">
+                            <img src="{{ url_for('static', filename='images/brand/HRF-Logo.png') }}" alt="Human Rights Foundation Logo" style="max-width: 200px; width: auto; height: auto; display: block; margin: 0 auto;">
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 0 24px;">
+                            <img src="{{ hero.image_url }}" alt="{{ hero.image_alt }}" class="hero-img">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 24px 24px 40px 24px; text-align: center;">
+                            <h1 style="font-family: Arial, sans-serif; font-size: 32px; font-weight: bold; margin: 0 0 15px 0; color: #333333;">{{ hero.headline }}</h1>
+                            <p style="font-family: Arial, sans-serif; font-size: 16px; line-height: 1.5; margin: 0 0 25px 0; color: #333333;">{{ hero.description }}</p>
+                            
+                            {% if hero.url or ctas %}
+                            <table cellpadding="0" cellspacing="0" border="0" align="center">
+                              <tr>
+                                {% if hero.url %}
+                                <td style="padding: 0 5px;">
+                                  <a href="{{ hero.url }}" 
+                                     style="display:inline-block; background:#ffffff; border:1px solid #6c757d; border-radius:5px; 
+                                            padding:12px 24px; font-family:Arial, sans-serif; font-size:16px; 
+                                            color:#6c757d; text-decoration:none; font-weight:bold; 
+                                            box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                                    Learn More
+                                  </a>
+                                </td>
+                                {% endif %}
+                                {% if ctas %}
                                 {% for cta in ctas %}
-                                    <td style="text-align: center; padding: 5px; {% if ctas|length == 1 %}width: 100%;{% else %}width: 50%;{% endif %}">
-                                        <a href="{{ cta.url }}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; font-size: 16px;">{{ cta.text }}</a>
-                                    </td>
+                                <td style="padding: 0 5px;">
+                                  <a href="{{ cta.url }}" 
+                                     style="display:inline-block; background:#0d6efd; border:1px solid #0d6efd; border-radius:5px; 
+                                            padding:12px 24px; font-family:Arial, sans-serif; font-size:16px; 
+                                            color:#ffffff; text-decoration:none; font-weight:bold; 
+                                            box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                                    {{ cta.text }}
+                                  </a>
+                                </td>
                                 {% endfor %}
-                            </tr>
-                        </table>
+                                {% endif %}
+                              </tr>
+                            </table>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td height="40" style="font-size: 1px; line-height: 1px;">&nbsp;</td>
+                    </tr>
+
+                    <!-- STORIES SECTION -->
+                    {% if stories %}
+                        {% for story in stories %} 
+                        <tr>
+                            <td style="padding: 0 24px 24px 24px;">
+                                <div class="story-divider"></div>
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; border-collapse: collapse;">
+                                    <tr>
+                                        <td class="stack-on-mobile" valign="middle" width="65%">
+                                            <h3 style="font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; margin: 0 0 12px 0; color: #333333; text-align: left;">{{ story.headline }}</h3>
+                                            <p style="font-family: Arial, sans-serif; font-size: 16px; line-height: 1.5; margin: 0 0 20px 0; color: #333333; text-align: left;">{{ story.description }}</p>
+                                            <table cellpadding="0" cellspacing="0" border="0" style="margin: 0; padding: 0;">
+                                                <tr>
+                                                    <td style="padding: 0 10px 10px 0; display: inline-block;">
+                                                        <a href="{{ story.url }}" class="outline-btn" style="display: inline-block; background: #ffffff; border: 1px solid #6c757d; border-radius: 5px; padding: 10px 16px; font-family: Arial, sans-serif; font-size: 14px; color: #6c757d; text-decoration: none; font-weight: bold; white-space: nowrap;">Read Story</a>
+                                                    </td>
+                                                    {% if story.cta %}
+                                                    <td style="padding: 0 10px 10px 0; display: inline-block;">
+                                                        <a href="{{ story.cta.url }}" class="hero-btn" style="display: inline-block; background: #0d6efd; border: 1px solid #0d6efd; border-radius: 5px; padding: 10px 16px; font-family: Arial, sans-serif; font-size: 14px; color: #ffffff; text-decoration: none; font-weight: bold; white-space: nowrap;">{{ story.cta.text }}</a>
+                                                    </td>
+                                                    {% endif %}
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td class="stack-on-mobile" valign="middle">
+                                            <img src="{{ story.image_url }}" alt="{{ story.image_alt }}" class="story-img">
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     {% endif %}
-                </td>
-            </tr>
 
-            {% if stories %}
-                <tr>
-                    <td style="padding: 20px 30px;">
-                        {% if stories|length == 1 %}
-                            <!-- SINGLE STORY LAYOUT -->
-                            <table style="width: 100%; border-spacing: 0;">
-                                <tr>
-                                    <td style="{% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                        <img src="{{ stories[0].image_url }}" alt="{{ stories[0].image_alt }}" style="width: 100%; max-width: 270px; height: auto; display: block; margin-bottom: 15px;">
-                                        <h2 style="font-size: 18px; margin: 10px 0 5px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ stories[0].headline }}</h2>
-                                        <p style="margin-bottom: 10px; font-size: 16px; line-height: 1.5; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ stories[0].description }}</p>
-                                        <p style="margin-bottom: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                            <a href="{{ stories[0].url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">
-                                                {% if static_translations %}{{ static_translations.read_story }}{% else %}Read Story{% endif %}
-                                            </a>
-                                        </p>
-                                        {% if stories[0].cta %}
-                                        <p style="margin-top: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                            <a href="{{ stories[0].cta.url }}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; font-size: 14px;">{{ stories[0].cta.text|safe }}</a>
-                                        </p>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            </table>
-                        {% else %}
-                            <!-- TWO STORIES LAYOUT -->
-                            <table class="story-table" style="width: 100%; border-spacing: 0;">
-                                <tr>
-                                    {% for story in stories %}
-                                    <td class="story-cell" style="width: 50%; padding: 10px; vertical-align: top; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                        <img src="{{ story.image_url }}" alt="{{ story.image_alt }}" style="width: 100%; max-width: 270px; height: auto; display: block; margin-bottom: 15px;">
-                                        <h2 style="font-size: 18px; margin: 10px 0 5px 0; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ story.headline }}</h2>
-                                        <p style="margin-bottom: 10px; font-size: 16px; line-height: 1.5; color: #333333; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">{{ story.description }}</p>
-                                        <p style="margin-bottom: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                            <a href="{{ story.url }}" style="color: #007bff; font-weight: bold; text-decoration: none;">
-                                                {% if static_translations %}{{ static_translations.read_story }}{% else %}Read Story{% endif %}
-                                            </a>
-                                        </p>
-                                        {% if story.cta %}
-                                        <p style="margin-top: 10px; {% if dir == 'rtl' %}text-align: right;{% else %}text-align: left;{% endif %}">
-                                            <a href="{{ story.cta.url }}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; font-size: 14px;">{{ story.cta.text|safe }}</a>
-                                        </p>
-                                        {% endif %}
-                                    </td>
-                                    {% endfor %}
-                                </tr>
-                            </table>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endif %}
-
-            <tr>
-                <td style="background-color: #eeeeee; color: #777777; padding: 20px 30px; text-align: center; font-size: 12px; line-height: 1.4;">
-                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #777777;">{{ country }}</p>
-                    <p style="margin: 0 0 5px 0; color: #777777;">Human Rights Foundation</p>
-                    <p style="margin: 0; color: #777777;">
-                        {% if static_translations %}{{ static_translations.footer_copyright }}{% else %}© 2025 Human Rights Foundation. All rights reserved.{% endif %}
-                    </p>
-                </td>
-            </tr>
-        </table>
-    </div>
+                    <!-- FOOTER -->
+                    <tr>
+                        <td style="background-color: #eeeeee; color: #777777; padding: 20px 30px; text-align: center; font-size: 12px; line-height: 1.4; font-family: Arial, sans-serif;">
+                            <p style="margin: 0 0 10px 0; font-weight: bold; color: #777777;">{{ country }}</p>
+                            <p style="margin: 0 0 5px 0; color: #777777;">Human Rights Foundation</p>
+                            <p style="margin: 0; color: #777777;">&copy; 2025 Human Rights Foundation. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

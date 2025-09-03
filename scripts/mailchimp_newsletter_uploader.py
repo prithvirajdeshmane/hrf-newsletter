@@ -136,7 +136,7 @@ class MailchimpNewsletterUploader:
                 # Map based on common naming patterns
                 if 'HRF-Logo' in image_name or 'logo' in image_name.lower():
                     # Brand logo mapping
-                    url_mapping['../../static/images/brand/HRF-Logo.png'] = mailchimp_url
+                    url_mapping['/static/images/brand/HRF-Logo.png'] = mailchimp_url
                 elif 'hero' in image_name.lower():
                     # Hero image mapping with regex pattern for session ID
                     url_mapping['../../static/images/user-images/[^/]+/img-hero.jpg'] = mailchimp_url
